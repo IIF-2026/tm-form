@@ -70,16 +70,26 @@
 <body>
 <header>
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
-    <div>
-      <div class="k">Inqui-Lab · Think &amp; Make</div>
-      <h1>School Orientation — Form 1</h1>
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <button id="homeBtn" aria-label="Home" style="display:none;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;border-radius:10px;padding:4px 10px;cursor:pointer">←</button>
+      <div>
+        <div class="k">Inqui-Lab · Think &amp; Make</div>
+        <h1 id="hdrTitle">THINK &amp; MAKE 2026-27</h1>
+      </div>
     </div>
     <button id="cfgBtn" aria-label="Settings" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;border-radius:10px;padding:6px 10px;cursor:pointer">⚙</button>
   </div>
   <div class="progress"><span id="bar"></span></div>
 </header>
 
-<main id="app">
+<!-- HOME SCREEN -->
+<main id="home" style="max-width:640px;margin:0 auto;padding:16px">
+  <div class="banner show" id="queueBannerHome" style="display:none;background:#EAF7FC;color:var(--navy)"></div>
+  <p style="color:var(--muted);font-size:15px;margin:4px 2px 18px">Implementation Trackers</p>
+  <div id="formMenu"></div>
+</main>
+
+<main id="app" style="display:none">
   <div class="banner" id="offlineBanner">You're offline. Submissions will queue and send when you reconnect.</div>
   <div class="banner show" id="queueBanner" style="display:none;background:#EAF7FC;color:var(--navy)"></div>
 
@@ -91,7 +101,7 @@
       <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
     <label>School <span class="req">*</span></label>
     <select id="school"><option value="">Select partner first…</option></select>
-    <div class="hint" id="schoolHint">Schools load from the School Master tab and filter by partner.</div>
+    <div class="hint" id="schoolHint">Schools load from the Schools_List tab and filter by partner.</div>
     <label>School Code</label>
     <input id="schoolCode" placeholder="auto-filled" readonly style="background:var(--pastel)" />
     <label>Visited by (IIF staff) <span class="req">*</span></label>
@@ -193,9 +203,7 @@
     <div class="sec-title"><span class="tag">H</span> Photos &amp; location</div>
     <label>School photo</label>
     <input id="h1" type="file" accept="image/*" capture="environment" />
-    <div class="hint">Optional. Uploaded to Drive is out of scope for v1 — filename is recorded.</div>
-    <label>Classroom photo</label>
-    <input id="h2" type="file" accept="image/*" capture="environment" />
+    <div class="hint">Optional. Uploaded to Drive; a clickable link is saved in the sheet.</div>
     <label>Google Maps location <span class="req">*</span></label>
     <div class="row2">
       <button class="copybtn" id="gpsBtn" style="width:100%">📍 Use my GPS</button>
@@ -217,9 +225,37 @@
   </div>
 </main>
 
-<footer>
+<footer id="footer1" style="display:none">
   <button class="btn-draft" id="draftBtn">Save draft</button>
   <button class="btn-submit" id="submitBtn">Submit</button>
+</footer>
+
+<!-- FORM 2 SCREEN: Student Data Collection -->
+<main id="app2" style="display:none">
+  <div class="banner" id="offlineBanner2">You're offline. Submissions will queue and send when you reconnect.</div>
+  <div class="card">
+    <div class="sec-title"><span class="tag">F2</span> Student data collection</div>
+    <label>Partner <span class="req">*</span></label>
+    <select id="f2partner"><option value="">Select…</option>
+      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <label>School <span class="req">*</span></label>
+    <select id="f2school"><option value="">Select partner first…</option></select>
+    <label>School Code</label>
+    <input id="f2code" placeholder="auto-filled" readonly style="background:var(--pastel)" />
+    <label>Grade <span class="req">*</span></label>
+    <select id="f2grade"><option value="">Select…</option><option>6</option><option>7</option><option>8</option></select>
+    <label>Section <span class="req">*</span></label>
+    <input id="f2section" placeholder="e.g. A" />
+    <label>Total student count <span class="req">*</span></label>
+    <input id="f2total" type="number" min="1" max="200" inputmode="numeric" />
+    <label>Teams-formation page photo <span class="req">*</span></label>
+    <input id="f2photo" type="file" accept="image/*" capture="environment" />
+    <div class="hint">Photo of the teams-formation format pasted in the classroom. Saved to Drive; a link is stored in the sheet.</div>
+  </div>
+</main>
+
+<footer id="footer2" style="display:none">
+  <button class="btn-submit" id="submit2Btn" style="flex:1">Submit</button>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -285,7 +321,6 @@ function refreshSchoolOptions(){
 }
 /* ======================================================= */
 
-const TEAMS_PER_SL = 3; // backend hardcode, never asked
 const DRAFT_KEY = 'tm_form1_draft';
 const QUEUE_KEY = 'tm_form1_queue';
 
@@ -309,7 +344,7 @@ document.querySelectorAll('#grades .chip').forEach(chip => {
   };
 });
 
-function blankSection(name){ return { name, total:'', girls:'', boys:'', sls:4, teams:12, spt:3 }; }
+function blankSection(name){ return { name, total:'', sls:'', clusters:'', teams:'' }; }
 const SEC_NAMES = ['A','B','C','D'];
 
 function renderGrades(){
@@ -332,25 +367,16 @@ function renderGrades(){
       sb.className = 'section-block';
       sb.innerHTML = `
         <label>Section ${s.name} — total students</label>
-        <input type="number" min="1" max="100" inputmode="numeric" data-f="total" data-g="${g}" data-i="${idx}" value="${s.total}">
+        <input type="text" inputmode="numeric" data-f="total" data-g="${g}" data-i="${idx}" value="${s.total}">
         <div class="row2">
-          <div><label>Girls</label><input type="number" min="0" data-f="girls" data-g="${g}" data-i="${idx}" value="${s.girls}"></div>
-          <div><label>Boys</label><input type="number" min="0" data-f="boys" data-g="${g}" data-i="${idx}" value="${s.boys}"></div>
+          <div><label>Number of SLs</label><input type="number" min="0" max="12" inputmode="numeric" data-f="sls" data-g="${g}" data-i="${idx}" value="${s.sls}"></div>
+          <div><label>Number of clusters</label><input type="number" min="0" max="20" inputmode="numeric" data-f="clusters" data-g="${g}" data-i="${idx}" value="${s.clusters}"></div>
         </div>
-        <div class="err-msg" data-ge="${g}-${idx}">Girls + Boys must equal total students.</div>
-        <div class="row2">
-          <div><label>Number of SLs</label><input type="number" min="1" max="8" data-f="sls" data-g="${g}" data-i="${idx}" value="${s.sls}"></div>
-          <div><label>Total teams</label><input type="number" min="1" max="30" data-f="teams" data-g="${g}" data-i="${idx}" value="${s.teams}"></div>
-        </div>
-        <label>Students per team</label>
-        <select data-f="spt" data-g="${g}" data-i="${idx}">
-          ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${s.spt==n?'selected':''}>${n}</option>`).join('')}
-        </select>
-        <div class="preview" data-pv="${g}-${idx}"></div>`;
+        <label>Number of teams</label>
+        <input type="number" min="0" max="60" inputmode="numeric" data-f="teams" data-g="${g}" data-i="${idx}" value="${s.teams}">`;
       block.appendChild(sb);
     });
     wrap.appendChild(block);
-    gd.perSection.forEach((s,idx)=>updatePreview(g,idx));
   });
 
   // wire section-count selects
@@ -366,35 +392,10 @@ function renderGrades(){
     el.oninput = el.onchange = () => {
       const {f,g,i} = el.dataset;
       let v = el.value;
-      state.perGrade[g].perSection[i][f] = (f==='name') ? v : (v===''?'':Number(v));
-      // auto-default teams when SLs change
-      if (f==='sls') {
-        const teamsEl = wrap.querySelector(`[data-f="teams"][data-g="${g}"][data-i="${i}"]`);
-        const auto = (Number(v)||0)*TEAMS_PER_SL;
-        state.perGrade[g].perSection[i].teams = auto;
-        if (teamsEl) teamsEl.value = auto;
-      }
-      updatePreview(g,i);
+      // total is free text; sls/clusters/teams are numbers
+      state.perGrade[g].perSection[i][f] = (f==='total'||f==='name') ? v : (v===''?'':Number(v));
     };
   });
-}
-
-function updatePreview(g,i){
-  const s = state.perGrade[g].perSection[i];
-  const pv = document.querySelector(`[data-pv="${g}-${i}"]`);
-  const ge = document.querySelector(`[data-ge="${g}-${i}"]`);
-  if (!pv) return;
-  const cap = (Number(s.teams)||0)*(Number(s.spt)||0);
-  const total = Number(s.total)||0;
-  pv.textContent = `Scaffold capacity = ${s.teams||0} teams × ${s.spt||0} = ${cap} students`;
-  pv.classList.remove('warn');
-  if (total && Math.abs(total-cap) > 4){
-    pv.classList.add('warn');
-    pv.textContent += ` ⚠ You entered ${total}. Some students may be waitlisted or some slots empty.`;
-  }
-  // girls+boys check
-  const gb = (Number(s.girls)||0)+(Number(s.boys)||0);
-  if (ge) ge.classList.toggle('show', total>0 && gb>0 && gb!==total);
 }
 
 /* ---------- partner / school linkage ---------- */
@@ -470,8 +471,8 @@ function collect(){
   state.grades.forEach(g=>{
     perGrade[g]={sections:state.perGrade[g].sections,
       perSection:state.perGrade[g].perSection.map(s=>({
-        name:s.name,total:Number(s.total)||0,girls:Number(s.girls)||0,boys:Number(s.boys)||0,
-        sls:Number(s.sls)||0,teams:Number(s.teams)||0,studentsPerTeam:Number(s.spt)||0
+        name:s.name, total:(s.total||'').toString(),
+        sls:Number(s.sls)||0, clusters:Number(s.clusters)||0, teams:Number(s.teams)||0
       }))};
   });
   return {
@@ -485,11 +486,22 @@ function collect(){
     sectionD:{d1:state.yn.d1||'',d2:$('d2').value,d3:state.yn.d3||'',d4:state.yn.d4||''},
     sectionE:{e1:state.e1,e2:$('e2').value,e3:$('e3').value},
     sectionG:{fieldLead:$('g1').value},
-    sectionH:{schoolPhotoUrl:fileName('h1'),classroomPhotoUrl:fileName('h2'),mapsLink:$('h3').value},
+    sectionH:{schoolPhoto:PHOTOS.h1, mapsLink:$('h3').value},
     sectionI:{i1:$('i1').value,i2:$('i2').value,i3:state.yn.i3||''}
   };
 }
-function fileName(id){const f=$(id).files[0];return f?f.name:'';}
+// holds {name, mime, data(base64)} per photo input, filled at submit time
+const PHOTOS = { h1:null };
+function readPhoto(id){
+  return new Promise((resolve)=>{
+    const f=$(id).files[0];
+    if(!f){ resolve(null); return; }
+    const r=new FileReader();
+    r.onload=()=>resolve({ name:f.name, mime:f.type||'image/jpeg', data:String(r.result).split(',')[1] });
+    r.onerror=()=>resolve(null);
+    r.readAsDataURL(f);
+  });
+}
 function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:(r&0x3|0x8)).toString(16);});}
 
 /* ---------- validate ---------- */
@@ -503,13 +515,6 @@ function validate(){
   if(!state.grades.length) return 'Select at least one grade.';
   for(const k of ['d1','d3','d4','i3']) if(!state.yn[k]) return 'Answer all Yes/No questions.';
   if(!state.e1.length) return 'Select at least one preferred day.';
-  // girls+boys hard check
-  for(const g of state.grades){
-    for(const s of state.perGrade[g].perSection){
-      const t=Number(s.total)||0,gb=(Number(s.girls)||0)+(Number(s.boys)||0);
-      if(t>0 && gb>0 && gb!==t) return `Grade ${g} Sec ${s.name}: girls + boys must equal total.`;
-    }
-  }
   return null;
 }
 
@@ -517,8 +522,10 @@ function validate(){
 $('submitBtn').onclick = async () => {
   const err=validate();
   if(err){ toast(err); return; }
+  $('submitBtn').disabled=true; $('submitBtn').textContent='Reading photos…';
+  PHOTOS.h1 = await readPhoto('h1');
   const payload=collect();
-  $('submitBtn').disabled=true; $('submitBtn').textContent='Sending…';
+  $('submitBtn').textContent='Sending…';
   const ok=await send(payload);
   if(ok){ localStorage.removeItem(DRAFT_KEY); showDone(payload.submissionId); }
   else { queue(payload); showDone(payload.submissionId,true); }
@@ -536,7 +543,15 @@ async function send(payload){
   }catch(e){ return false; }
 }
 
-function queue(p){const q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]');q.push(p);localStorage.setItem(QUEUE_KEY,JSON.stringify(q));updateQueueBanner();}
+function queue(p){
+  // Photos are too large to hold in offline storage; drop the bytes but keep a note.
+  const light=JSON.parse(JSON.stringify(p));
+  if(light.sectionH){
+    if(light.sectionH.schoolPhoto){ light.sectionH.schoolPhoto=null; light.sectionH.photoNote='School photo not saved (submitted offline)'; }
+  }
+  const q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]');
+  q.push(light); localStorage.setItem(QUEUE_KEY,JSON.stringify(q)); updateQueueBanner();
+}
 async function flushQueue(){
   let q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]');
   if(!q.length) return;
@@ -622,10 +637,91 @@ $('cfgTest').onclick=async()=>{
   }catch(e){ $('cfgMsg').textContent='Could not reach the URL. Check it and that access = Anyone.'; }
 };
 
+/* ---------- screen navigation ---------- */
+const FORMS = [
+  { id:'form1', title:'Form 1 · Orientation Data', active:true },
+  { id:'form2', title:'Form 2 · Student Data Collection', active:true },
+  { id:'form3', title:'Form 3', active:false },
+  { id:'form4', title:'Form 4', active:false },
+  { id:'form5', title:'Form 5', active:false }
+];
+function renderMenu(){
+  const m=$('formMenu'); m.innerHTML='';
+  FORMS.forEach(f=>{
+    const b=document.createElement('button');
+    b.textContent = f.active ? f.title : f.title+' · coming soon';
+    b.disabled = !f.active;
+    b.style.cssText='display:block;width:100%;text-align:left;margin-bottom:12px;padding:18px 16px;'
+      +'border-radius:14px;border:1px solid var(--line);font-size:16px;font-weight:700;cursor:pointer;'
+      +(f.active?'background:#fff;color:var(--navy)':'background:#f2f5f7;color:#9fb3bd;cursor:not-allowed');
+    if(f.active) b.onclick=()=>showScreen(f.id);
+    m.appendChild(b);
+  });
+}
+function showScreen(which){
+  const home=$('home'), a1=$('app'), f1=$('footer1'), a2=$('app2'), f2=$('footer2');
+  home.style.display='none'; a1.style.display='none'; f1.style.display='none';
+  a2.style.display='none'; f2.style.display='none';
+  $('homeBtn').style.display = which==='home' ? 'none' : 'block';
+  $('bar').style.width='0%';
+  if(which==='home'){ home.style.display='block'; $('hdrTitle').textContent='THINK & MAKE 2026-27'; updateQueueBanner(); }
+  else if(which==='form1'){ a1.style.display='block'; f1.style.display='flex'; $('hdrTitle').textContent='School Orientation — Form 1'; refreshSchoolOptions(); updateBar(); }
+  else if(which==='form2'){ a2.style.display='block'; f2.style.display='flex'; $('hdrTitle').textContent='Student Data — Form 2'; refreshF2Schools(); }
+  window.scrollTo(0,0);
+}
+$('homeBtn').onclick=()=>showScreen('home');
+
+/* ---------- Form 2: student data ---------- */
+function refreshF2Schools(){
+  const partner=$('f2partner').value, sel=$('f2school');
+  const list=SCHOOLS.filter(s=>s.partner===partner);
+  sel.innerHTML = partner
+    ? (list.length ? '<option value="">Select school…</option>'+list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('')
+                   : '<option value="">No schools listed for this partner</option>')
+    : '<option value="">Select partner first…</option>';
+  $('f2code').value='';
+}
+$('f2partner').addEventListener('change', refreshF2Schools);
+$('f2school').addEventListener('change', ()=>{
+  const opt=$('f2school').selectedOptions[0];
+  $('f2code').value = opt ? (opt.dataset.code||'') : '';
+});
+$('submit2Btn').onclick = async () => {
+  const p=$('f2partner').value, sc=$('f2school').value, gr=$('f2grade').value,
+        sec=$('f2section').value.trim(), tot=$('f2total').value.trim();
+  if(!p) return toast('Select partner.');
+  if(!sc) return toast('Select school.');
+  if(!gr) return toast('Select grade.');
+  if(!sec) return toast('Enter section.');
+  if(!tot) return toast('Enter total count.');
+  if(!$('f2photo').files[0]) return toast('Attach the teams-formation photo.');
+  $('submit2Btn').disabled=true; $('submit2Btn').textContent='Reading photo…';
+  const photo=await readPhoto('f2photo');
+  const payload={
+    formId:'form2_student_data', formVersion:'1.0',
+    submissionId:uuid(), submittedAt:new Date().toISOString(), token:getCfg().token,
+    header:{partner:p, school:sc, schoolCode:$('f2code').value, grade:gr, section:sec},
+    total:Number(tot)||0,
+    photo:photo
+  };
+  $('submit2Btn').textContent='Sending…';
+  const ok=await send(payload);
+  $('submit2Btn').disabled=false; $('submit2Btn').textContent='Submit';
+  if(ok){
+    $('app2').innerHTML='<div class="done"><div class="big">✅</div><h2>Submitted</h2>'
+      +'<p>Student data saved.</p><span class="idpill">'+payload.submissionId+'</span>'
+      +'<br><br><button class="copybtn" onclick="location.reload()">Fill another</button></div>';
+    $('footer2').style.display='none';
+  } else {
+    toast('Could not send. Check connection and try again.');
+  }
+};
+
 /* ---------- boot ---------- */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+renderMenu(); showScreen('home');
 restoreDraft(); updateQueueBanner(); netStatus(); updateBar();
-loadSchools().then(refreshSchoolOptions);
+loadSchools().then(()=>{ refreshSchoolOptions(); refreshF2Schools(); });
 if(!getCfg().url){ openCfg(); $('cfgMsg').textContent='First-time setup: paste your backend URL to start saving data.'; }
 </script>
 </body>
