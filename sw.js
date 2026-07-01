@@ -1,4 +1,4 @@
-const CACHE = 'tm-form-v4';
+const CACHE = 'tm-form-v8';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (e) => {
