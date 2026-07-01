@@ -69,8 +69,13 @@
 </head>
 <body>
 <header>
-  <div class="k">Inqui-Lab · Think &amp; Make</div>
-  <h1>School Orientation — Form 1</h1>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="k">Inqui-Lab · Think &amp; Make</div>
+      <h1>School Orientation — Form 1</h1>
+    </div>
+    <button id="cfgBtn" aria-label="Settings" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;border-radius:10px;padding:6px 10px;cursor:pointer">⚙</button>
+  </div>
   <div class="progress"><span id="bar"></span></div>
 </header>
 
@@ -219,10 +224,37 @@
 
 <div class="toast" id="toast"></div>
 
+<div id="cfgModal" style="display:none;position:fixed;inset:0;background:rgba(13,59,74,.55);z-index:60;padding:20px;overflow:auto">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;padding:20px">
+    <h2 style="margin:0 0 4px;color:var(--navy);font-size:18px">App settings</h2>
+    <p class="hint" style="margin:0 0 14px">Paste the Apps Script Web App URL (ends in <b>/exec</b>). Stored on this device only.</p>
+    <label>Backend URL</label>
+    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/…/exec" />
+    <label>Secret token</label>
+    <input id="cfgToken" placeholder="TM2026SECRET (or leave blank)" />
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-draft" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer" id="cfgTest">Test connection</button>
+      <button class="btn-submit" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;color:#fff;cursor:pointer" id="cfgSave">Save</button>
+    </div>
+    <div class="hint" id="cfgMsg" style="margin-top:10px"></div>
+    <button id="cfgClose" style="margin-top:12px;width:100%;background:none;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer">Close</button>
+  </div>
+</div>
+
 <script>
 /* ============ CONFIG — edit these two lines ============ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT-tUXtfuRa7CIF4Y9DeGQBAu2eP9dDfmYQkUtVZJzKoifHEEKxzjoUSZy_1sYsGL-Ug/exec';
-const SECRET_TOKEN = 'TM2026SECRET';   // must match Code.gs (or '' to disable)
+// Optional fallback defaults. You can leave these as-is and set the URL
+// inside the app (⚙ Settings). Values entered in the app take priority.
+const DEFAULT_URL = '';                 // e.g. paste your /exec URL here to hard-code it
+const DEFAULT_TOKEN = 'TM2026SECRET';   // must match Code.gs (or '' to disable)
+
+const CFG_KEY = 'tm_cfg';
+function getCfg(){
+  try{ const c=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+    return { url:c.url||DEFAULT_URL, token:(c.token!==undefined?c.token:DEFAULT_TOKEN) }; }
+  catch(e){ return { url:DEFAULT_URL, token:DEFAULT_TOKEN }; }
+}
+function setCfg(url,token){ localStorage.setItem(CFG_KEY,JSON.stringify({url:url,token:token})); }
 /* ======================================================= */
 
 const TEAMS_PER_SL = 3; // backend hardcode, never asked
@@ -409,7 +441,7 @@ function collect(){
   });
   return {
     formId:'form1_school_orientation', formVersion:'1.0',
-    submissionId:uuid(), submittedAt:new Date().toISOString(), token:SECRET_TOKEN,
+    submissionId:uuid(), submittedAt:new Date().toISOString(), token:getCfg().token,
     header:{partner:$('partner').value,school:$('school').value,schoolCode:$('schoolCode').value.trim().toUpperCase(),
       visitedBy:$('visitedBy').value,visitDate:$('visitDate').value},
     sectionA:{a1:$('a1').value,a2:$('a2').value,a3:$('a3').value,a4:$('a4').value,a5:$('a5').value,a6:$('a6').value},
@@ -458,9 +490,10 @@ $('submitBtn').onclick = async () => {
 };
 
 async function send(payload){
-  if(APPS_SCRIPT_URL.includes('PASTE_YOUR')) { toast('Backend URL not set yet'); return false; }
+  const url = getCfg().url;
+  if(!url) { toast('Set the backend URL first (⚙ top right)'); return false; }
   try{
-    const r=await fetch(APPS_SCRIPT_URL,{method:'POST',
+    const r=await fetch(url,{method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight
       body:JSON.stringify(payload)});
     const j=await r.json();
@@ -527,9 +560,33 @@ function netStatus(){$('offlineBanner').classList.toggle('show',!navigator.onLin
 window.addEventListener('online',netStatus);
 window.addEventListener('offline',netStatus);
 
+/* ---------- settings modal ---------- */
+function openCfg(){
+  const c=getCfg();
+  $('cfgUrl').value=c.url||''; $('cfgToken').value=c.token||''; $('cfgMsg').textContent='';
+  $('cfgModal').style.display='block';
+}
+$('cfgBtn').onclick=openCfg;
+$('cfgClose').onclick=()=>$('cfgModal').style.display='none';
+$('cfgSave').onclick=()=>{
+  const u=$('cfgUrl').value.trim();
+  if(u && !/\/exec$/.test(u)){ $('cfgMsg').textContent='URL should end in /exec.'; return; }
+  setCfg(u,$('cfgToken').value.trim());
+  $('cfgModal').style.display='none'; toast('Settings saved ✓'); flushQueue();
+};
+$('cfgTest').onclick=async()=>{
+  const u=$('cfgUrl').value.trim();
+  if(!u){ $('cfgMsg').textContent='Enter a URL first.'; return; }
+  $('cfgMsg').textContent='Testing…';
+  try{ const r=await fetch(u); const j=await r.json();
+    $('cfgMsg').textContent = j.status==='ok' ? 'Connected ✓ backend is live.' : 'Reached it, unexpected reply.';
+  }catch(e){ $('cfgMsg').textContent='Could not reach the URL. Check it and that access = Anyone.'; }
+};
+
 /* ---------- boot ---------- */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 restoreDraft(); updateQueueBanner(); netStatus(); updateBar();
+if(!getCfg().url){ openCfg(); $('cfgMsg').textContent='First-time setup: paste your backend URL to start saving data.'; }
 </script>
 </body>
 </html>
