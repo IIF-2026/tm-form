@@ -88,12 +88,12 @@
     <div class="sec-title"><span class="tag">Visit</span> Who &amp; where</div>
     <label>Partner <span class="req">*</span></label>
     <select id="partner"><option value="">Select…</option>
-      <option>Datla</option><option>Micron</option><option>HBL</option></select>
+      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
     <label>School <span class="req">*</span></label>
-    <input id="school" placeholder="School name" />
-    <div class="hint">In production this is a dropdown filtered by partner (School Master). Free text for now.</div>
-    <label>School Code <span class="req">*</span></label>
-    <input id="schoolCode" placeholder="e.g. MA" />
+    <select id="school"><option value="">Select partner first…</option></select>
+    <div class="hint" id="schoolHint">Schools load from the School Master tab and filter by partner.</div>
+    <label>School Code</label>
+    <input id="schoolCode" placeholder="auto-filled" readonly style="background:var(--pastel)" />
     <label>Visited by (IIF staff) <span class="req">*</span></label>
     <input id="visitedBy" placeholder="Your name" />
     <label>Date of visit <span class="req">*</span></label>
@@ -255,6 +255,34 @@ function getCfg(){
   catch(e){ return { url:DEFAULT_URL, token:DEFAULT_TOKEN }; }
 }
 function setCfg(url,token){ localStorage.setItem(CFG_KEY,JSON.stringify({url:url,token:token})); }
+
+/* ---------- school master (partner-filtered dropdown) ---------- */
+const SCHOOLS_KEY='tm_schools_cache';
+let SCHOOLS=[];
+async function loadSchools(){
+  // use cache immediately if present
+  try{ SCHOOLS=JSON.parse(localStorage.getItem(SCHOOLS_KEY)||'[]'); }catch(e){ SCHOOLS=[]; }
+  const url=getCfg().url;
+  if(!url) return;
+  try{
+    const r=await fetch(url+(url.includes('?')?'&':'?')+'action=schools');
+    const j=await r.json();
+    if(j.status==='ok' && Array.isArray(j.schools)){
+      SCHOOLS=j.schools;
+      localStorage.setItem(SCHOOLS_KEY,JSON.stringify(SCHOOLS));
+    }
+  }catch(e){/* offline: keep cache */}
+}
+function refreshSchoolOptions(){
+  const partner=$('partner').value;
+  const sel=$('school');
+  const list=SCHOOLS.filter(s=>s.partner===partner);
+  sel.innerHTML = partner
+    ? (list.length ? '<option value="">Select school…</option>' + list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('')
+                   : '<option value="">No schools listed for this partner</option>')
+    : '<option value="">Select partner first…</option>';
+  $('schoolCode').value='';
+}
 /* ======================================================= */
 
 const TEAMS_PER_SL = 3; // backend hardcode, never asked
@@ -369,6 +397,13 @@ function updatePreview(g,i){
   if (ge) ge.classList.toggle('show', total>0 && gb>0 && gb!==total);
 }
 
+/* ---------- partner / school linkage ---------- */
+$('partner').addEventListener('change', refreshSchoolOptions);
+$('school').addEventListener('change', () => {
+  const opt=$('school').selectedOptions[0];
+  $('schoolCode').value = opt ? (opt.dataset.code||'') : '';
+});
+
 /* ---------- Y/N buttons ---------- */
 document.querySelectorAll('[data-yn]').forEach(grp=>{
   grp.querySelectorAll('button').forEach(btn=>{
@@ -419,7 +454,7 @@ $('visitDate').max = new Date().toISOString().slice(0,10);
 
 /* ---------- progress bar ---------- */
 function updateBar(){
-  const reqIds=['partner','school','schoolCode','visitedBy','visitDate','a1','a2','a3','a4','a5','a6','b1','b2','b4','b5','b7','d2','e2','g1','h3'];
+  const reqIds=['partner','school','visitedBy','visitDate','a1','a2','a3','a4','a5','a6','b1','b2','b4','b5','b7','d2','e2','g1','h3'];
   let filled=reqIds.filter(id=>$(id)&&$(id).value.trim()).length;
   filled += ['d1','d3','d4','i3'].filter(k=>state.yn[k]).length;
   filled += state.grades.length?1:0;
@@ -459,7 +494,7 @@ function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=
 
 /* ---------- validate ---------- */
 function validate(){
-  const need=[['partner','Partner'],['school','School'],['schoolCode','School code'],['visitedBy','Visited by'],
+  const need=[['partner','Partner'],['school','School'],['visitedBy','Visited by'],
     ['a1','Place'],['a2','Distance'],['a3','Gender'],['a4','School type'],['a5','Medium'],['a6','Programme year'],
     ['b1','Principal name'],['b4','Teacher name'],['b7','Teacher subject'],['d2','Internet'],['e2','Time slot'],['g1','Field lead'],['h3','Maps location']];
   for(const [id,name] of need){ if(!$(id).value.trim()) return name+' is required.'; }
@@ -537,7 +572,11 @@ function restoreDraft(){
   document.querySelectorAll('#e1 .chip').forEach(c=>c.classList.toggle('on',state.e1.includes(c.dataset.d)));
   document.querySelectorAll('[data-yn]').forEach(grp=>{const v=state.yn[grp.dataset.yn];
     grp.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));});
-  renderGrades(); updateBar(); toast('Draft restored');
+  renderGrades();
+  // school dropdown: rebuild options for the restored partner, then set value
+  refreshSchoolOptions();
+  if(s.fields.school){ $('school').value=s.fields.school; $('schoolCode').value=s.fields.schoolCode||''; }
+  updateBar(); toast('Draft restored');
 }
 
 /* ---------- done screen ---------- */
@@ -572,7 +611,7 @@ $('cfgSave').onclick=()=>{
   const u=$('cfgUrl').value.trim();
   if(u && !/\/exec$/.test(u)){ $('cfgMsg').textContent='URL should end in /exec.'; return; }
   setCfg(u,$('cfgToken').value.trim());
-  $('cfgModal').style.display='none'; toast('Settings saved ✓'); flushQueue();
+  $('cfgModal').style.display='none'; toast('Settings saved ✓'); flushQueue(); loadSchools().then(refreshSchoolOptions);
 };
 $('cfgTest').onclick=async()=>{
   const u=$('cfgUrl').value.trim();
@@ -586,6 +625,7 @@ $('cfgTest').onclick=async()=>{
 /* ---------- boot ---------- */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 restoreDraft(); updateQueueBanner(); netStatus(); updateBar();
+loadSchools().then(refreshSchoolOptions);
 if(!getCfg().url){ openCfg(); $('cfgMsg').textContent='First-time setup: paste your backend URL to start saving data.'; }
 </script>
 </body>
