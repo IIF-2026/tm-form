@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#00BFFF" />
+<link rel="manifest" href="manifest.json" />
+<title>T&amp;M · School Orientation</title>
+<style>
+  :root{
+    --blue:#00BFFF; --navy:#0D3B4A; --pink:#E5006D;
+    --bg:#F2FBFE; --card:#FFFFFF; --line:#D6E9F0; --ink:#0D3B4A;
+    --muted:#5B7683; --ok:#0B8457; --warn:#B26A00; --err:#C0392B;
+    --pastel:#EAF7FC;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);padding-bottom:96px}
+  header{position:sticky;top:0;z-index:10;background:var(--navy);color:#fff;
+    padding:14px 16px calc(14px + env(safe-area-inset-top)) 16px}
+  header .k{font-size:12px;letter-spacing:.14em;color:var(--blue);font-weight:700;text-transform:uppercase}
+  header h1{margin:2px 0 0;font-size:18px;font-weight:700}
+  .progress{height:4px;background:rgba(255,255,255,.18);margin-top:10px;border-radius:2px;overflow:hidden}
+  .progress>span{display:block;height:100%;background:var(--blue);width:0;transition:width .3s}
+  main{max-width:640px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .sec-title{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:15px;font-weight:700;color:var(--navy)}
+  .sec-title .tag{background:var(--pastel);color:var(--navy);font-size:12px;font-weight:700;
+    padding:3px 9px;border-radius:20px}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  label .req{color:var(--pink)}
+  .hint{font-size:12px;color:var(--muted);margin:-2px 0 6px}
+  input,select,textarea{width:100%;font-size:16px;padding:11px 12px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink);font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+  textarea{min-height:76px;resize:vertical}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:8px 14px;font-size:14px;cursor:pointer}
+  .chip.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+  .yn{display:flex;gap:8px}
+  .yn button{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px;font-size:15px;cursor:pointer}
+  .yn button.on{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+  .grade-block{border:1px dashed var(--blue);border-radius:12px;padding:12px;margin-top:12px;background:#fbfeff}
+  .grade-block h3{margin:0 0 4px;font-size:14px;color:var(--blue)}
+  .section-block{border-left:3px solid var(--blue);padding:2px 0 2px 12px;margin-top:14px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .preview{background:var(--pastel);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px;color:var(--navy)}
+  .preview.warn{background:#FFF4E0;color:var(--warn)}
+  .err-msg{color:var(--err);font-size:12px;margin-top:4px;display:none}
+  .err-msg.show{display:block}
+  .copybtn{margin-top:8px;background:#fff;border:1px solid var(--blue);color:var(--blue);
+    border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+  footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:20}
+  footer button{flex:1;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
+  .btn-draft{background:var(--pastel);color:var(--navy)}
+  .btn-submit{background:var(--blue);color:#fff}
+  .btn-submit:disabled{opacity:.5}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--navy);color:#fff;
+    padding:11px 18px;border-radius:24px;font-size:14px;z-index:40;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  .done{text-align:center;padding:40px 20px}
+  .done .big{font-size:44px}
+  .done h2{color:var(--ok)}
+  .idpill{font-family:monospace;background:var(--pastel);padding:4px 8px;border-radius:6px}
+  .banner{background:#FFF4E0;color:var(--warn);font-size:13px;padding:8px 12px;border-radius:10px;margin-bottom:12px;display:none}
+  .banner.show{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="k">Inqui-Lab · Think &amp; Make</div>
+      <h1>School Orientation — Form 1</h1>
+    </div>
+    <button id="cfgBtn" aria-label="Settings" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;border-radius:10px;padding:6px 10px;cursor:pointer">⚙</button>
+  </div>
+  <div class="progress"><span id="bar"></span></div>
+</header>
+
+<main id="app">
+  <div class="banner" id="offlineBanner">You're offline. Submissions will queue and send when you reconnect.</div>
+  <div class="banner show" id="queueBanner" style="display:none;background:#EAF7FC;color:var(--navy)"></div>
+
+  <!-- HEADER CONTEXT -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">Visit</span> Who &amp; where</div>
+    <label>Partner <span class="req">*</span></label>
+    <select id="partner"><option value="">Select…</option>
+      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <label>School <span class="req">*</span></label>
+    <select id="school"><option value="">Select partner first…</option></select>
+    <div class="hint" id="schoolHint">Schools load from the School Master tab and filter by partner.</div>
+    <label>School Code</label>
+    <input id="schoolCode" placeholder="auto-filled" readonly style="background:var(--pastel)" />
+    <label>Visited by (IIF staff) <span class="req">*</span></label>
+    <input id="visitedBy" placeholder="Your name" />
+    <label>Date of visit <span class="req">*</span></label>
+    <input id="visitDate" type="date" />
+  </div>
+
+  <!-- SECTION A -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">A</span> Location &amp; classification</div>
+    <label>Place (Mandal + Village) <span class="req">*</span></label>
+    <input id="a1" placeholder="e.g. Kosgi Mandal, Baharpet Village" />
+    <label>Distance from district HQ (km) <span class="req">*</span></label>
+    <input id="a2" type="number" min="0" max="500" inputmode="numeric" />
+    <label>Gender type <span class="req">*</span></label>
+    <select id="a3"><option value="">Select…</option><option>Girls</option><option>Boys</option><option>Co-Ed</option></select>
+    <label>School type <span class="req">*</span></label>
+    <select id="a4"><option value="">Select…</option>
+      <option>Govt HS</option><option>KGBV</option><option>Social Welfare Residential</option>
+      <option>Govt Girls HS</option><option>PM SHRI</option><option>Tribal Welfare Residential</option><option>Other</option></select>
+    <label>Medium of instruction <span class="req">*</span></label>
+    <select id="a5"><option value="">Select…</option>
+      <option>Telugu</option><option>English</option><option>Urdu</option><option>Hindi</option><option>Bilingual</option></select>
+    <label>Programme year <span class="req">*</span></label>
+    <select id="a6"><option value="">Select…</option><option>Year 1</option><option>Year 2</option><option>Year 3</option></select>
+  </div>
+
+  <!-- SECTION B -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">B</span> Principal &amp; teacher</div>
+    <label>Principal — full name <span class="req">*</span></label>
+    <input id="b1" />
+    <label>Principal — phone <span class="req">*</span></label>
+    <input id="b2" type="tel" inputmode="numeric" placeholder="10-digit mobile" />
+    <div class="err-msg" id="b2e">Enter a valid 10-digit Indian mobile.</div>
+    <label>Principal — email</label>
+    <input id="b3" type="email" placeholder="optional" />
+    <label>Assigned teacher — full name <span class="req">*</span></label>
+    <input id="b4" />
+    <label>Assigned teacher — phone <span class="req">*</span></label>
+    <input id="b5" type="tel" inputmode="numeric" placeholder="10-digit mobile" />
+    <div class="err-msg" id="b5e">Enter a valid 10-digit Indian mobile.</div>
+    <label>Assigned teacher — email</label>
+    <input id="b6" type="email" placeholder="optional" />
+    <label>Assigned teacher — subject taught <span class="req">*</span></label>
+    <input id="b7" placeholder="e.g. Science, Maths" />
+  </div>
+
+  <!-- SECTION C (dynamic) -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">C</span> Enrollment &amp; teams</div>
+    <label>Grades in programme at this school <span class="req">*</span></label>
+    <div class="chips" id="grades">
+      <div class="chip" data-g="6">Grade 6</div>
+      <div class="chip" data-g="7">Grade 7</div>
+      <div class="chip" data-g="8">Grade 8</div>
+    </div>
+    <div id="gradeBlocks"></div>
+  </div>
+
+  <!-- SECTION D -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">D</span> Infrastructure</div>
+    <label>Lab / activity room available <span class="req">*</span></label>
+    <div class="yn" data-yn="d1"><button data-v="Yes">Yes</button><button data-v="No">No</button></div>
+    <label>Internet at school <span class="req">*</span></label>
+    <select id="d2"><option value="">Select…</option><option>None</option><option>Mobile data only</option><option>WiFi available</option></select>
+    <label>Smart board / projector <span class="req">*</span></label>
+    <div class="yn" data-yn="d3"><button data-v="Yes">Yes</button><button data-v="No">No</button></div>
+    <label>Storage space for MM Kit <span class="req">*</span></label>
+    <div class="yn" data-yn="d4"><button data-v="Yes">Yes</button><button data-v="No">No</button></div>
+  </div>
+
+  <!-- SECTION E -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">E</span> Session schedule</div>
+    <label>Preferred session day <span class="req">*</span></label>
+    <div class="chips" id="e1">
+      <div class="chip" data-d="Mon">Mon</div><div class="chip" data-d="Tue">Tue</div>
+      <div class="chip" data-d="Wed">Wed</div><div class="chip" data-d="Thu">Thu</div>
+      <div class="chip" data-d="Fri">Fri</div><div class="chip" data-d="Sat">Sat</div>
+    </div>
+    <label>Preferred time slot <span class="req">*</span></label>
+    <select id="e2"><option value="">Select…</option><option>Morning Half</option><option>Second Half</option><option>Last Period</option><option>Specific Time</option></select>
+    <label>Blackout dates / exam periods</label>
+    <textarea id="e3" placeholder="e.g. Sep 15–25 quarterly exams, Oct 4 festival"></textarea>
+  </div>
+
+  <!-- SECTION G -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">G</span> IIF assignment</div>
+    <label>Field Lead for this school <span class="req">*</span></label>
+    <input id="g1" placeholder="Field lead name" />
+  </div>
+
+  <!-- SECTION H -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">H</span> Photos &amp; location</div>
+    <label>School photo</label>
+    <input id="h1" type="file" accept="image/*" capture="environment" />
+    <div class="hint">Optional. Uploaded to Drive is out of scope for v1 — filename is recorded.</div>
+    <label>Classroom photo</label>
+    <input id="h2" type="file" accept="image/*" capture="environment" />
+    <label>Google Maps location <span class="req">*</span></label>
+    <div class="row2">
+      <button class="copybtn" id="gpsBtn" style="width:100%">📍 Use my GPS</button>
+      <input id="h3" placeholder="or paste maps URL" />
+    </div>
+    <div class="hint" id="gpsOut"></div>
+  </div>
+
+  <!-- SECTION I -->
+  <div class="card">
+    <div class="sec-title"><span class="tag">I</span> Notes &amp; sign-off</div>
+    <label>Open observations / concerns</label>
+    <textarea id="i1" maxlength="500"></textarea>
+    <label>Next steps · what's needed from school</label>
+    <textarea id="i2" maxlength="500"></textarea>
+    <label>Principal acknowledgement <span class="req">*</span></label>
+    <div class="hint">Principal aware of programme and timing.</div>
+    <div class="yn" data-yn="i3"><button data-v="Yes">Yes</button><button data-v="No">No</button></div>
+  </div>
+</main>
+
+<footer>
+  <button class="btn-draft" id="draftBtn">Save draft</button>
+  <button class="btn-submit" id="submitBtn">Submit</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div id="cfgModal" style="display:none;position:fixed;inset:0;background:rgba(13,59,74,.55);z-index:60;padding:20px;overflow:auto">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;padding:20px">
+    <h2 style="margin:0 0 4px;color:var(--navy);font-size:18px">App settings</h2>
+    <p class="hint" style="margin:0 0 14px">Paste the Apps Script Web App URL (ends in <b>/exec</b>). Stored on this device only.</p>
+    <label>Backend URL</label>
+    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/…/exec" />
+    <label>Secret token</label>
+    <input id="cfgToken" placeholder="TM2026SECRET (or leave blank)" />
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-draft" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer" id="cfgTest">Test connection</button>
+      <button class="btn-submit" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;color:#fff;cursor:pointer" id="cfgSave">Save</button>
+    </div>
+    <div class="hint" id="cfgMsg" style="margin-top:10px"></div>
+    <button id="cfgClose" style="margin-top:12px;width:100%;background:none;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer">Close</button>
+  </div>
+</div>
+
+<script>
+/* ============ CONFIG — edit these two lines ============ */
+// Optional fallback defaults. You can leave these as-is and set the URL
+// inside the app (⚙ Settings). Values entered in the app take priority.
+const DEFAULT_URL = '';                 // e.g. paste your /exec URL here to hard-code it
+const DEFAULT_TOKEN = 'TM2026SECRET';   // must match Code.gs (or '' to disable)
+
+const CFG_KEY = 'tm_cfg';
+function getCfg(){
+  try{ const c=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+    return { url:c.url||DEFAULT_URL, token:(c.token!==undefined?c.token:DEFAULT_TOKEN) }; }
+  catch(e){ return { url:DEFAULT_URL, token:DEFAULT_TOKEN }; }
+}
+function setCfg(url,token){ localStorage.setItem(CFG_KEY,JSON.stringify({url:url,token:token})); }
+
+/* ---------- school master (partner-filtered dropdown) ---------- */
+const SCHOOLS_KEY='tm_schools_cache';
+let SCHOOLS=[];
+async function loadSchools(){
+  // use cache immediately if present
+  try{ SCHOOLS=JSON.parse(localStorage.getItem(SCHOOLS_KEY)||'[]'); }catch(e){ SCHOOLS=[]; }
+  const url=getCfg().url;
+  if(!url) return;
+  try{
+    const r=await fetch(url+(url.includes('?')?'&':'?')+'action=schools');
+    const j=await r.json();
+    if(j.status==='ok' && Array.isArray(j.schools)){
+      SCHOOLS=j.schools;
+      localStorage.setItem(SCHOOLS_KEY,JSON.stringify(SCHOOLS));
+    }
+  }catch(e){/* offline: keep cache */}
+}
+function refreshSchoolOptions(){
+  const partner=$('partner').value;
+  const sel=$('school');
+  const list=SCHOOLS.filter(s=>s.partner===partner);
+  sel.innerHTML = partner
+    ? (list.length ? '<option value="">Select school…</option>' + list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('')
+                   : '<option value="">No schools listed for this partner</option>')
+    : '<option value="">Select partner first…</option>';
+  $('schoolCode').value='';
+}
+/* ======================================================= */
+
+const TEAMS_PER_SL = 3; // backend hardcode, never asked
+const DRAFT_KEY = 'tm_form1_draft';
+const QUEUE_KEY = 'tm_form1_queue';
+
+const $ = (id) => document.getElementById(id);
+const state = { grades: [], perGrade: {}, yn: {}, e1: [], gps: '' };
+
+/* ---------- Section C dynamic rendering ---------- */
+document.querySelectorAll('#grades .chip').forEach(chip => {
+  chip.onclick = () => {
+    const g = chip.dataset.g;
+    chip.classList.toggle('on');
+    if (chip.classList.contains('on')) {
+      state.grades.push(g);
+      if (!state.perGrade[g]) state.perGrade[g] = { sections: 1, perSection: [blankSection('A')] };
+    } else {
+      state.grades = state.grades.filter(x => x !== g);
+      delete state.perGrade[g];
+    }
+    state.grades.sort();
+    renderGrades();
+  };
+});
+
+function blankSection(name){ return { name, total:'', girls:'', boys:'', sls:4, teams:12, spt:3 }; }
+const SEC_NAMES = ['A','B','C','D'];
+
+function renderGrades(){
+  const wrap = $('gradeBlocks'); wrap.innerHTML = '';
+  state.grades.forEach(g => {
+    const gd = state.perGrade[g];
+    const block = document.createElement('div');
+    block.className = 'grade-block';
+    block.innerHTML = `<h3>Grade ${g}</h3>
+      <label>Number of sections</label>
+      <select data-sec="${g}">
+        ${[1,2,3].map(n=>`<option value="${n}" ${gd.sections==n?'selected':''}>${n}</option>`).join('')}
+      </select>`;
+    // adjust perSection length
+    while (gd.perSection.length < gd.sections) gd.perSection.push(blankSection(SEC_NAMES[gd.perSection.length]));
+    gd.perSection.length = gd.sections;
+
+    gd.perSection.forEach((s, idx) => {
+      const sb = document.createElement('div');
+      sb.className = 'section-block';
+      sb.innerHTML = `
+        <label>Section ${s.name} — total students</label>
+        <input type="number" min="1" max="100" inputmode="numeric" data-f="total" data-g="${g}" data-i="${idx}" value="${s.total}">
+        <div class="row2">
+          <div><label>Girls</label><input type="number" min="0" data-f="girls" data-g="${g}" data-i="${idx}" value="${s.girls}"></div>
+          <div><label>Boys</label><input type="number" min="0" data-f="boys" data-g="${g}" data-i="${idx}" value="${s.boys}"></div>
+        </div>
+        <div class="err-msg" data-ge="${g}-${idx}">Girls + Boys must equal total students.</div>
+        <div class="row2">
+          <div><label>Number of SLs</label><input type="number" min="1" max="8" data-f="sls" data-g="${g}" data-i="${idx}" value="${s.sls}"></div>
+          <div><label>Total teams</label><input type="number" min="1" max="30" data-f="teams" data-g="${g}" data-i="${idx}" value="${s.teams}"></div>
+        </div>
+        <label>Students per team</label>
+        <select data-f="spt" data-g="${g}" data-i="${idx}">
+          ${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${s.spt==n?'selected':''}>${n}</option>`).join('')}
+        </select>
+        <div class="preview" data-pv="${g}-${idx}"></div>`;
+      block.appendChild(sb);
+    });
+    wrap.appendChild(block);
+    gd.perSection.forEach((s,idx)=>updatePreview(g,idx));
+  });
+
+  // wire section-count selects
+  wrap.querySelectorAll('select[data-sec]').forEach(sel=>{
+    sel.onchange = () => {
+      const g = sel.dataset.sec;
+      state.perGrade[g].sections = Number(sel.value);
+      renderGrades();
+    };
+  });
+  // wire per-section fields
+  wrap.querySelectorAll('[data-f]').forEach(el=>{
+    el.oninput = el.onchange = () => {
+      const {f,g,i} = el.dataset;
+      let v = el.value;
+      state.perGrade[g].perSection[i][f] = (f==='name') ? v : (v===''?'':Number(v));
+      // auto-default teams when SLs change
+      if (f==='sls') {
+        const teamsEl = wrap.querySelector(`[data-f="teams"][data-g="${g}"][data-i="${i}"]`);
+        const auto = (Number(v)||0)*TEAMS_PER_SL;
+        state.perGrade[g].perSection[i].teams = auto;
+        if (teamsEl) teamsEl.value = auto;
+      }
+      updatePreview(g,i);
+    };
+  });
+}
+
+function updatePreview(g,i){
+  const s = state.perGrade[g].perSection[i];
+  const pv = document.querySelector(`[data-pv="${g}-${i}"]`);
+  const ge = document.querySelector(`[data-ge="${g}-${i}"]`);
+  if (!pv) return;
+  const cap = (Number(s.teams)||0)*(Number(s.spt)||0);
+  const total = Number(s.total)||0;
+  pv.textContent = `Scaffold capacity = ${s.teams||0} teams × ${s.spt||0} = ${cap} students`;
+  pv.classList.remove('warn');
+  if (total && Math.abs(total-cap) > 4){
+    pv.classList.add('warn');
+    pv.textContent += ` ⚠ You entered ${total}. Some students may be waitlisted or some slots empty.`;
+  }
+  // girls+boys check
+  const gb = (Number(s.girls)||0)+(Number(s.boys)||0);
+  if (ge) ge.classList.toggle('show', total>0 && gb>0 && gb!==total);
+}
+
+/* ---------- partner / school linkage ---------- */
+$('partner').addEventListener('change', refreshSchoolOptions);
+$('school').addEventListener('change', () => {
+  const opt=$('school').selectedOptions[0];
+  $('schoolCode').value = opt ? (opt.dataset.code||'') : '';
+});
+
+/* ---------- Y/N buttons ---------- */
+document.querySelectorAll('[data-yn]').forEach(grp=>{
+  grp.querySelectorAll('button').forEach(btn=>{
+    btn.onclick = () => {
+      grp.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      state.yn[grp.dataset.yn] = btn.dataset.v;
+    };
+  });
+});
+
+/* ---------- E1 day chips ---------- */
+document.querySelectorAll('#e1 .chip').forEach(chip=>{
+  chip.onclick = () => {
+    chip.classList.toggle('on');
+    const d = chip.dataset.d;
+    if (chip.classList.contains('on')) state.e1.push(d);
+    else state.e1 = state.e1.filter(x=>x!==d);
+  };
+});
+
+/* ---------- GPS ---------- */
+$('gpsBtn').onclick = (ev) => {
+  ev.preventDefault();
+  if (!navigator.geolocation){ toast('GPS not available'); return; }
+  $('gpsOut').textContent = 'Getting location…';
+  navigator.geolocation.getCurrentPosition(p=>{
+    const {latitude,longitude} = p.coords;
+    state.gps = `https://maps.google.com/?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+    $('h3').value = state.gps;
+    $('gpsOut').textContent = 'Location captured ✓';
+  }, ()=>{ $('gpsOut').textContent='Could not get GPS — paste a maps URL instead.'; },
+  {enableHighAccuracy:true,timeout:10000});
+};
+
+/* ---------- phone validation ---------- */
+const phoneOk = v => /^[6-9][0-9]{9}$/.test(v);
+['b2','b5'].forEach(id=>{
+  $(id).oninput = () => {
+    const v=$(id).value.trim();
+    $(id+'e').classList.toggle('show', v.length>0 && !phoneOk(v));
+  };
+});
+
+/* ---------- date default ---------- */
+$('visitDate').value = new Date().toISOString().slice(0,10);
+$('visitDate').max = new Date().toISOString().slice(0,10);
+
+/* ---------- progress bar ---------- */
+function updateBar(){
+  const reqIds=['partner','school','visitedBy','visitDate','a1','a2','a3','a4','a5','a6','b1','b2','b4','b5','b7','d2','e2','g1','h3'];
+  let filled=reqIds.filter(id=>$(id)&&$(id).value.trim()).length;
+  filled += ['d1','d3','d4','i3'].filter(k=>state.yn[k]).length;
+  filled += state.grades.length?1:0;
+  const total=reqIds.length+4+1;
+  $('bar').style.width=Math.round(filled/total*100)+'%';
+}
+document.addEventListener('input',updateBar);
+document.addEventListener('click',()=>setTimeout(updateBar,0));
+
+/* ---------- collect payload ---------- */
+function collect(){
+  const perGrade={};
+  state.grades.forEach(g=>{
+    perGrade[g]={sections:state.perGrade[g].sections,
+      perSection:state.perGrade[g].perSection.map(s=>({
+        name:s.name,total:Number(s.total)||0,girls:Number(s.girls)||0,boys:Number(s.boys)||0,
+        sls:Number(s.sls)||0,teams:Number(s.teams)||0,studentsPerTeam:Number(s.spt)||0
+      }))};
+  });
+  return {
+    formId:'form1_school_orientation', formVersion:'1.0',
+    submissionId:uuid(), submittedAt:new Date().toISOString(), token:getCfg().token,
+    header:{partner:$('partner').value,school:$('school').value,schoolCode:$('schoolCode').value.trim().toUpperCase(),
+      visitedBy:$('visitedBy').value,visitDate:$('visitDate').value},
+    sectionA:{a1:$('a1').value,a2:$('a2').value,a3:$('a3').value,a4:$('a4').value,a5:$('a5').value,a6:$('a6').value},
+    sectionB:{b1:$('b1').value,b2:$('b2').value,b3:$('b3').value,b4:$('b4').value,b5:$('b5').value,b6:$('b6').value,b7:$('b7').value},
+    sectionC:{grades:state.grades.map(Number),perGrade},
+    sectionD:{d1:state.yn.d1||'',d2:$('d2').value,d3:state.yn.d3||'',d4:state.yn.d4||''},
+    sectionE:{e1:state.e1,e2:$('e2').value,e3:$('e3').value},
+    sectionG:{fieldLead:$('g1').value},
+    sectionH:{schoolPhotoUrl:fileName('h1'),classroomPhotoUrl:fileName('h2'),mapsLink:$('h3').value},
+    sectionI:{i1:$('i1').value,i2:$('i2').value,i3:state.yn.i3||''}
+  };
+}
+function fileName(id){const f=$(id).files[0];return f?f.name:'';}
+function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:(r&0x3|0x8)).toString(16);});}
+
+/* ---------- validate ---------- */
+function validate(){
+  const need=[['partner','Partner'],['school','School'],['visitedBy','Visited by'],
+    ['a1','Place'],['a2','Distance'],['a3','Gender'],['a4','School type'],['a5','Medium'],['a6','Programme year'],
+    ['b1','Principal name'],['b4','Teacher name'],['b7','Teacher subject'],['d2','Internet'],['e2','Time slot'],['g1','Field lead'],['h3','Maps location']];
+  for(const [id,name] of need){ if(!$(id).value.trim()) return name+' is required.'; }
+  if(!phoneOk($('b2').value.trim())) return 'Valid principal phone required.';
+  if(!phoneOk($('b5').value.trim())) return 'Valid teacher phone required.';
+  if(!state.grades.length) return 'Select at least one grade.';
+  for(const k of ['d1','d3','d4','i3']) if(!state.yn[k]) return 'Answer all Yes/No questions.';
+  if(!state.e1.length) return 'Select at least one preferred day.';
+  // girls+boys hard check
+  for(const g of state.grades){
+    for(const s of state.perGrade[g].perSection){
+      const t=Number(s.total)||0,gb=(Number(s.girls)||0)+(Number(s.boys)||0);
+      if(t>0 && gb>0 && gb!==t) return `Grade ${g} Sec ${s.name}: girls + boys must equal total.`;
+    }
+  }
+  return null;
+}
+
+/* ---------- submit + offline queue ---------- */
+$('submitBtn').onclick = async () => {
+  const err=validate();
+  if(err){ toast(err); return; }
+  const payload=collect();
+  $('submitBtn').disabled=true; $('submitBtn').textContent='Sending…';
+  const ok=await send(payload);
+  if(ok){ localStorage.removeItem(DRAFT_KEY); showDone(payload.submissionId); }
+  else { queue(payload); showDone(payload.submissionId,true); }
+};
+
+async function send(payload){
+  const url = getCfg().url;
+  if(!url) { toast('Set the backend URL first (⚙ top right)'); return false; }
+  try{
+    const r=await fetch(url,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight
+      body:JSON.stringify(payload)});
+    const j=await r.json();
+    return j.status==='success';
+  }catch(e){ return false; }
+}
+
+function queue(p){const q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]');q.push(p);localStorage.setItem(QUEUE_KEY,JSON.stringify(q));updateQueueBanner();}
+async function flushQueue(){
+  let q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]');
+  if(!q.length) return;
+  const remain=[];
+  for(const p of q){ const ok=await send(p); if(!ok) remain.push(p); }
+  localStorage.setItem(QUEUE_KEY,JSON.stringify(remain));
+  updateQueueBanner();
+  if(q.length&&!remain.length) toast('Queued submissions synced ✓');
+}
+function updateQueueBanner(){
+  const q=JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]');
+  const b=$('queueBanner');
+  if(q.length){b.style.display='block';b.textContent=`${q.length} submission(s) waiting to sync.`;}
+  else b.style.display='none';
+}
+
+/* ---------- draft ---------- */
+$('draftBtn').onclick=()=>{localStorage.setItem(DRAFT_KEY,JSON.stringify(snapshot()));toast('Draft saved ✓');};
+function snapshot(){
+  const s={state:JSON.parse(JSON.stringify(state)),fields:{}};
+  ['partner','school','schoolCode','visitedBy','visitDate','a1','a2','a3','a4','a5','a6',
+   'b1','b2','b3','b4','b5','b6','b7','d2','e2','e3','g1','h3','i1','i2'].forEach(id=>s.fields[id]=$(id).value);
+  return s;
+}
+function restoreDraft(){
+  const raw=localStorage.getItem(DRAFT_KEY); if(!raw) return;
+  if(!confirm('Resume your saved draft?')){return;}
+  const s=JSON.parse(raw);
+  Object.assign(state,s.state);
+  Object.keys(s.fields).forEach(id=>{if($(id))$(id).value=s.fields[id];});
+  // rebuild chips/yn UI
+  document.querySelectorAll('#grades .chip').forEach(c=>c.classList.toggle('on',state.grades.includes(c.dataset.g)));
+  document.querySelectorAll('#e1 .chip').forEach(c=>c.classList.toggle('on',state.e1.includes(c.dataset.d)));
+  document.querySelectorAll('[data-yn]').forEach(grp=>{const v=state.yn[grp.dataset.yn];
+    grp.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));});
+  renderGrades();
+  // school dropdown: rebuild options for the restored partner, then set value
+  refreshSchoolOptions();
+  if(s.fields.school){ $('school').value=s.fields.school; $('schoolCode').value=s.fields.schoolCode||''; }
+  updateBar(); toast('Draft restored');
+}
+
+/* ---------- done screen ---------- */
+function showDone(id,queued){
+  $('app').innerHTML=`<div class="done"><div class="big">${queued?'📴':'✅'}</div>
+    <h2>${queued?'Saved offline':'Submitted'}</h2>
+    <p>${queued?'This will sync automatically when you reconnect.':'Data saved to the sheet.'}</p>
+    <p>Submission ID<br><span class="idpill">${id}</span></p>
+    <button class="copybtn" onclick="location.reload()">Fill another school</button></div>`;
+  document.querySelector('footer').style.display='none';
+  window.scrollTo(0,0);
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* ---------- network status ---------- */
+function netStatus(){$('offlineBanner').classList.toggle('show',!navigator.onLine);if(navigator.onLine)flushQueue();}
+window.addEventListener('online',netStatus);
+window.addEventListener('offline',netStatus);
+
+/* ---------- settings modal ---------- */
+function openCfg(){
+  const c=getCfg();
+  $('cfgUrl').value=c.url||''; $('cfgToken').value=c.token||''; $('cfgMsg').textContent='';
+  $('cfgModal').style.display='block';
+}
+$('cfgBtn').onclick=openCfg;
+$('cfgClose').onclick=()=>$('cfgModal').style.display='none';
+$('cfgSave').onclick=()=>{
+  const u=$('cfgUrl').value.trim();
+  if(u && !/\/exec$/.test(u)){ $('cfgMsg').textContent='URL should end in /exec.'; return; }
+  setCfg(u,$('cfgToken').value.trim());
+  $('cfgModal').style.display='none'; toast('Settings saved ✓'); flushQueue(); loadSchools().then(refreshSchoolOptions);
+};
+$('cfgTest').onclick=async()=>{
+  const u=$('cfgUrl').value.trim();
+  if(!u){ $('cfgMsg').textContent='Enter a URL first.'; return; }
+  $('cfgMsg').textContent='Testing…';
+  try{ const r=await fetch(u); const j=await r.json();
+    $('cfgMsg').textContent = j.status==='ok' ? 'Connected ✓ backend is live.' : 'Reached it, unexpected reply.';
+  }catch(e){ $('cfgMsg').textContent='Could not reach the URL. Check it and that access = Anyone.'; }
+};
+
+/* ---------- boot ---------- */
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+restoreDraft(); updateQueueBanner(); netStatus(); updateBar();
+loadSchools().then(refreshSchoolOptions);
+if(!getCfg().url){ openCfg(); $('cfgMsg').textContent='First-time setup: paste your backend URL to start saving data.'; }
+</script>
+</body>
+</html>
