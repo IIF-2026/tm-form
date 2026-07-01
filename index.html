@@ -281,7 +281,7 @@
 /* ============ CONFIG — edit these two lines ============ */
 // Optional fallback defaults. You can leave these as-is and set the URL
 // inside the app (⚙ Settings). Values entered in the app take priority.
-const DEFAULT_URL = '';                 // e.g. paste your /exec URL here to hard-code it
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbyT-tUXtfuRa7CIF4Y9DeGQBAu2eP9dDfmYQkUtVZJzKoifHEEKxzjoUSZy_1sYsGL-Ug/exec';
 const DEFAULT_TOKEN = 'TM2026SECRET';   // must match Code.gs (or '' to disable)
 
 const CFG_KEY = 'tm_cfg';
@@ -722,7 +722,8 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch
 renderMenu(); showScreen('home');
 restoreDraft(); updateQueueBanner(); netStatus(); updateBar();
 loadSchools().then(()=>{ refreshSchoolOptions(); refreshF2Schools(); });
-if(!getCfg().url){ openCfg(); $('cfgMsg').textContent='First-time setup: paste your backend URL to start saving data.'; }
+/* Settings popup no longer auto-opens: backend URL is built into the app.
+   The gear (⚙) is still available if you ever need to override it. */
 </script>
 </body>
 </html>
