@@ -194,8 +194,8 @@
   <!-- SECTION G -->
   <div class="card">
     <div class="sec-title"><span class="tag">G</span> IIF assignment</div>
-    <label>Field Lead for this school <span class="req">*</span></label>
-    <input id="g1" placeholder="Field lead name" />
+    <label>IIF POC of the school <span class="req">*</span></label>
+    <input id="g1" placeholder="IIF point of contact name" />
   </div>
 
   <!-- SECTION H -->
@@ -251,11 +251,108 @@
     <label>Teams-formation page photo <span class="req">*</span></label>
     <input id="f2photo" type="file" accept="image/*" capture="environment" />
     <div class="hint">Photo of the teams-formation format pasted in the classroom. Saved to Drive; a link is stored in the sheet.</div>
+    <label>Second page photo <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+    <input id="f2photo2" type="file" accept="image/*" capture="environment" />
+    <div class="hint">Use only if the teams list runs onto a second page (many teams).</div>
   </div>
 </main>
 
 <footer id="footer2" style="display:none">
   <button class="btn-submit" id="submit2Btn" style="flex:1">Submit</button>
+</footer>
+
+<!-- FORM 3 SCREEN: SL Selection Assessment -->
+<main id="app3" style="display:none">
+  <div class="banner" id="offlineBanner3">You're offline. Submissions will queue and send when you reconnect.</div>
+  <div class="banner show" id="queueBanner3" style="display:none;background:#EAF7FC;color:var(--navy)"></div>
+
+  <div class="card">
+    <div class="sec-title"><span class="tag">F3</span> Where &amp; who</div>
+    <label>Partner <span class="req">*</span></label>
+    <select id="f3partner"><option value="">Select…</option>
+      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <label>School <span class="req">*</span></label>
+    <select id="f3school"><option value="">Select partner first…</option></select>
+    <label>School Code</label>
+    <input id="f3code" placeholder="auto-filled" readonly style="background:var(--pastel)" />
+    <div class="row2">
+      <div><label>Grade / Class <span class="req">*</span></label>
+        <select id="f3grade"><option value="">Select…</option><option>6</option><option>7</option><option>8</option></select></div>
+      <div><label>Section <span class="req">*</span></label>
+        <input id="f3section" placeholder="e.g. A" /></div>
+    </div>
+    <label>Teacher name <span class="req">*</span></label>
+    <input id="f3teacher" placeholder="Assigned teacher's name" />
+  </div>
+
+  <div id="slBlocks"></div>
+
+  <button id="addSlBtn" class="copybtn" style="width:100%;padding:13px;font-size:15px;margin-bottom:14px">+ Add another SL</button>
+
+  <div class="card">
+    <div class="sec-title"><span class="tag">✓</span> Teacher acknowledgement</div>
+    <label>Has the teacher confirmed this SL selection data? <span class="req">*</span></label>
+    <div class="yn" data-yn="f3ack">
+      <button type="button" data-v="Yes">Yes</button>
+      <button type="button" data-v="No">No</button>
+    </div>
+  </div>
+</main>
+
+<footer id="footer3" style="display:none">
+  <button class="btn-submit" id="submit3Btn" style="flex:1">Submit</button>
+</footer>
+
+<!-- FORM 4 SCREEN: Assessment Data -->
+<main id="app4" style="display:none">
+  <div class="banner" id="offlineBanner4">You're offline. Submissions will queue and send when you reconnect.</div>
+  <div class="banner show" id="queueBanner4" style="display:none;background:#EAF7FC;color:var(--navy)"></div>
+
+  <div class="card">
+    <div class="sec-title"><span class="tag">F4</span> Where</div>
+    <label>Partner <span class="req">*</span></label>
+    <select id="f4partner"><option value="">Select…</option>
+      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <label>School <span class="req">*</span></label>
+    <select id="f4school"><option value="">Select partner first…</option></select>
+    <label>School Code</label>
+    <input id="f4code" placeholder="auto-filled" readonly style="background:var(--pastel)" />
+    <div class="row2">
+      <div><label>Grade / Class <span class="req">*</span></label>
+        <input id="f4grade" placeholder="e.g. 8" /></div>
+      <div><label>Section <span class="req">*</span></label>
+        <input id="f4section" placeholder="e.g. A" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec-title"><span class="tag">A</span> Assessment</div>
+    <label>Total number of students <span class="req">*</span></label>
+    <input id="f4total" type="number" min="0" max="500" inputmode="numeric" />
+    <label>Baseline date <span class="req">*</span></label>
+    <input id="f4date" type="date" />
+    <label>Attendance (present on the day) <span class="req">*</span></label>
+    <input id="f4attendance" type="number" min="0" max="500" inputmode="numeric" />
+    <div class="row2">
+      <div><label>Paper assessment count</label>
+        <input id="f4paper" type="number" min="0" max="500" inputmode="numeric" /></div>
+      <div><label>Tab assessment count</label>
+        <input id="f4tab" type="number" min="0" max="500" inputmode="numeric" /></div>
+    </div>
+    <div class="preview" id="f4preview">Enter counts to see the split.</div>
+  </div>
+
+  <div class="card">
+    <div class="sec-title"><span class="tag">B</span> Assessment conducted by</div>
+    <label>IIF team <span class="req">*</span></label>
+    <input id="f4iif" placeholder="IIF staff names" />
+    <label>Volunteers</label>
+    <input id="f4vol" placeholder="Volunteer names (optional)" />
+  </div>
+</main>
+
+<footer id="footer4" style="display:none">
+  <button class="btn-submit" id="submit4Btn" style="flex:1">Submit</button>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -344,7 +441,7 @@ document.querySelectorAll('#grades .chip').forEach(chip => {
   };
 });
 
-function blankSection(name){ return { name, total:'', sls:'', clusters:'', teams:'' }; }
+function blankSection(name){ return { name, total:'', sls:'', clusters:'', teams:'', schedDay:'', schedTime:'' }; }
 const SEC_NAMES = ['A','B','C','D'];
 
 function renderGrades(){
@@ -373,7 +470,16 @@ function renderGrades(){
           <div><label>Number of clusters</label><input type="number" min="0" max="20" inputmode="numeric" data-f="clusters" data-g="${g}" data-i="${idx}" value="${s.clusters}"></div>
         </div>
         <label>Number of teams</label>
-        <input type="number" min="0" max="60" inputmode="numeric" data-f="teams" data-g="${g}" data-i="${idx}" value="${s.teams}">`;
+        <input type="number" min="0" max="60" inputmode="numeric" data-f="teams" data-g="${g}" data-i="${idx}" value="${s.teams}">
+        <div class="row2">
+          <div><label>Session day</label>
+            <select data-f="schedDay" data-g="${g}" data-i="${idx}">
+              <option value="">Select…</option>
+              ${['Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<option value="${d}" ${s.schedDay===d?'selected':''}>${d}</option>`).join('')}
+            </select></div>
+          <div><label>Session time</label>
+            <input type="text" data-f="schedTime" data-g="${g}" data-i="${idx}" value="${(s.schedTime||'').replace(/"/g,'&quot;')}" placeholder="e.g. 10:30 AM"></div>
+        </div>`;
       block.appendChild(sb);
     });
     wrap.appendChild(block);
@@ -392,8 +498,9 @@ function renderGrades(){
     el.oninput = el.onchange = () => {
       const {f,g,i} = el.dataset;
       let v = el.value;
-      // total is free text; sls/clusters/teams are numbers
-      state.perGrade[g].perSection[i][f] = (f==='total'||f==='name') ? v : (v===''?'':Number(v));
+      // total/name/schedule are free text; sls/clusters/teams are numbers
+      const textFields = (f==='total'||f==='name'||f==='schedDay'||f==='schedTime');
+      state.perGrade[g].perSection[i][f] = textFields ? v : (v===''?'':Number(v));
     };
   });
 }
@@ -472,7 +579,8 @@ function collect(){
     perGrade[g]={sections:state.perGrade[g].sections,
       perSection:state.perGrade[g].perSection.map(s=>({
         name:s.name, total:(s.total||'').toString(),
-        sls:Number(s.sls)||0, clusters:Number(s.clusters)||0, teams:Number(s.teams)||0
+        sls:Number(s.sls)||0, clusters:Number(s.clusters)||0, teams:Number(s.teams)||0,
+        schedDay:s.schedDay||'', schedTime:s.schedTime||''
       }))};
   });
   return {
@@ -508,7 +616,7 @@ function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=
 function validate(){
   const need=[['partner','Partner'],['school','School'],['visitedBy','Visited by'],
     ['a1','Place'],['a2','Distance'],['a3','Gender'],['a4','School type'],['a5','Medium'],['a6','Programme year'],
-    ['b1','Principal name'],['b4','Teacher name'],['b7','Teacher subject'],['d2','Internet'],['e2','Time slot'],['g1','Field lead'],['h3','Maps location']];
+    ['b1','Principal name'],['b4','Teacher name'],['b7','Teacher subject'],['d2','Internet'],['e2','Time slot'],['g1','IIF POC'],['h3','Maps location']];
   for(const [id,name] of need){ if(!$(id).value.trim()) return name+' is required.'; }
   if(!phoneOk($('b2').value.trim())) return 'Valid principal phone required.';
   if(!phoneOk($('b5').value.trim())) return 'Valid teacher phone required.';
@@ -641,8 +749,8 @@ $('cfgTest').onclick=async()=>{
 const FORMS = [
   { id:'form1', title:'Form 1 · Orientation Data', active:true },
   { id:'form2', title:'Form 2 · Student Data Collection', active:true },
-  { id:'form3', title:'Form 3', active:false },
-  { id:'form4', title:'Form 4', active:false },
+  { id:'form3', title:'Form 3 · SL Selection Assessment', active:true },
+  { id:'form4', title:'Form 4 · Assessment Data', active:true },
   { id:'form5', title:'Form 5', active:false }
 ];
 function renderMenu(){
@@ -659,14 +767,19 @@ function renderMenu(){
   });
 }
 function showScreen(which){
-  const home=$('home'), a1=$('app'), f1=$('footer1'), a2=$('app2'), f2=$('footer2');
+  const home=$('home'), a1=$('app'), f1=$('footer1'), a2=$('app2'), f2=$('footer2'),
+        a3=$('app3'), f3=$('footer3'), a4=$('app4'), f4=$('footer4');
   home.style.display='none'; a1.style.display='none'; f1.style.display='none';
   a2.style.display='none'; f2.style.display='none';
+  a3.style.display='none'; f3.style.display='none';
+  a4.style.display='none'; f4.style.display='none';
   $('homeBtn').style.display = which==='home' ? 'none' : 'block';
   $('bar').style.width='0%';
   if(which==='home'){ home.style.display='block'; $('hdrTitle').textContent='THINK & MAKE 2026-27'; updateQueueBanner(); }
   else if(which==='form1'){ a1.style.display='block'; f1.style.display='flex'; $('hdrTitle').textContent='School Orientation — Form 1'; refreshSchoolOptions(); updateBar(); }
   else if(which==='form2'){ a2.style.display='block'; f2.style.display='flex'; $('hdrTitle').textContent='Student Data — Form 2'; refreshF2Schools(); }
+  else if(which==='form3'){ a3.style.display='block'; f3.style.display='flex'; $('hdrTitle').textContent='SL Selection — Form 3'; refreshF3Schools(); if(!slState.length){ slState.push(blankSL()); } renderSLs(); }
+  else if(which==='form4'){ a4.style.display='block'; f4.style.display='flex'; $('hdrTitle').textContent='Assessment Data — Form 4'; refreshF4Schools(); }
   window.scrollTo(0,0);
 }
 $('homeBtn').onclick=()=>showScreen('home');
@@ -697,12 +810,14 @@ $('submit2Btn').onclick = async () => {
   if(!$('f2photo').files[0]) return toast('Attach the teams-formation photo.');
   $('submit2Btn').disabled=true; $('submit2Btn').textContent='Reading photo…';
   const photo=await readPhoto('f2photo');
+  const photo2 = $('f2photo2').files[0] ? await readPhoto('f2photo2') : null;
   const payload={
     formId:'form2_student_data', formVersion:'1.0',
     submissionId:uuid(), submittedAt:new Date().toISOString(), token:getCfg().token,
     header:{partner:p, school:sc, schoolCode:$('f2code').value, grade:gr, section:sec},
     total:Number(tot)||0,
-    photo:photo
+    photo:photo,
+    photo2:photo2
   };
   $('submit2Btn').textContent='Sending…';
   const ok=await send(payload);
@@ -715,6 +830,183 @@ $('submit2Btn').onclick = async () => {
   } else {
     toast('Could not send. Check connection and try again.');
   }
+};
+
+/* ========================================================
+   FORM 3 — SL Selection Assessment
+   ======================================================== */
+const slState = [];
+function blankSL(){ return { name:'', interested:'', attendance:'', status:'', clear:'', loud:'', english:'' }; }
+
+function refreshF3Schools(){
+  const partner=$('f3partner').value, sel=$('f3school');
+  const list=SCHOOLS.filter(s=>s.partner===partner);
+  sel.innerHTML = partner
+    ? (list.length ? '<option value="">Select school…</option>'+list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('')
+                   : '<option value="">No schools listed for this partner</option>')
+    : '<option value="">Select partner first…</option>';
+  $('f3code').value='';
+}
+$('f3partner').addEventListener('change', refreshF3Schools);
+$('f3school').addEventListener('change', ()=>{
+  const opt=$('f3school').selectedOptions[0];
+  $('f3code').value = opt ? (opt.dataset.code||'') : '';
+});
+
+const F3_CRITERIA = [
+  { key:'interested', label:'Interested in role', opts:['Yes','No'] },
+  { key:'attendance', label:'Attendance >90% last year', opts:['Yes','No','NA'] },
+  { key:'status',     label:'SL status', opts:['New SL','Old SL'] },
+  { key:'clear',      label:'Speaks clearly', opts:['Yes','No'] },
+  { key:'loud',       label:'Speaks loudly', opts:['Yes','No'] },
+  { key:'english',    label:'Understands English passage & explains in Telugu', opts:['Yes','No'] }
+];
+
+function renderSLs(){
+  const wrap=$('slBlocks'); wrap.innerHTML='';
+  slState.forEach((sl,idx)=>{
+    const card=document.createElement('div');
+    card.className='card';
+    let html=`<div class="sec-title"><span class="tag">SL ${idx+1}</span> Student Leader
+      ${idx>0?`<button type="button" class="rmSl" data-i="${idx}" style="margin-left:auto;background:none;border:none;color:var(--err);font-size:20px;cursor:pointer">✕</button>`:''}</div>
+      <label>SL name <span class="req">*</span></label>
+      <input type="text" class="slName" data-i="${idx}" value="${sl.name.replace(/"/g,'&quot;')}" placeholder="Student Leader's name">`;
+    F3_CRITERIA.forEach(c=>{
+      html+=`<label>${c.label} <span class="req">*</span></label>
+        <div class="chips slCrit" data-i="${idx}" data-key="${c.key}">
+          ${c.opts.map(o=>`<div class="chip ${sl[c.key]===o?'on':''}" data-v="${o}">${o}</div>`).join('')}
+        </div>`;
+    });
+    card.innerHTML=html;
+    wrap.appendChild(card);
+  });
+
+  wrap.querySelectorAll('.slName').forEach(inp=>{
+    inp.oninput=()=>{ slState[Number(inp.dataset.i)].name=inp.value; };
+  });
+  wrap.querySelectorAll('.slCrit').forEach(grp=>{
+    grp.querySelectorAll('.chip').forEach(chip=>{
+      chip.onclick=()=>{
+        const i=Number(grp.dataset.i), key=grp.dataset.key;
+        slState[i][key]=chip.dataset.v;
+        grp.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+        chip.classList.add('on');
+      };
+    });
+  });
+}
+$('addSlBtn').onclick=()=>{ slState.push(blankSL()); renderSLs(); window.scrollTo(0,document.body.scrollHeight); };
+
+document.querySelectorAll('[data-yn="f3ack"] button').forEach(btn=>{
+  btn.onclick=()=>{
+    const grp=btn.parentElement;
+    grp.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    state.yn.f3ack=btn.dataset.v;
+  };
+});
+$('slBlocks').addEventListener('click',e=>{
+  const rm=e.target.closest('.rmSl'); if(!rm) return;
+  slState.splice(Number(rm.dataset.i),1); renderSLs();
+});
+
+$('submit3Btn').onclick = async () => {
+  const p=$('f3partner').value, sc=$('f3school').value,
+        gr=$('f3grade').value, sec=$('f3section').value.trim(),
+        tch=$('f3teacher').value.trim();
+  if(!p) return toast('Select partner.');
+  if(!sc) return toast('Select school.');
+  if(!gr) return toast('Select grade.');
+  if(!sec) return toast('Enter section.');
+  if(!tch) return toast('Enter teacher name.');
+  if(!slState.length) return toast('Add at least one SL.');
+  for(let i=0;i<slState.length;i++){
+    const s=slState[i];
+    if(!s.name.trim()) return toast(`SL ${i+1}: enter a name.`);
+    for(const c of F3_CRITERIA){ if(!s[c.key]) return toast(`SL ${i+1}: answer "${c.label}".`); }
+  }
+  if(!state.yn.f3ack) return toast('Confirm teacher acknowledgement.');
+
+  const payload={
+    formId:'form3_sl_selection', formVersion:'1.0',
+    submissionId:uuid(), submittedAt:new Date().toISOString(), token:getCfg().token,
+    header:{ partner:p, school:sc, schoolCode:$('f3code').value, grade:gr, section:sec, teacher:tch },
+    teacherAck: state.yn.f3ack,
+    sls: slState.map(s=>({ name:s.name.trim(), interested:s.interested, attendance:s.attendance,
+      status:s.status, clear:s.clear, loud:s.loud, english:s.english }))
+  };
+  $('submit3Btn').disabled=true; $('submit3Btn').textContent='Sending…';
+  const ok=await send(payload);
+  $('submit3Btn').disabled=false; $('submit3Btn').textContent='Submit';
+  if(ok){
+    $('app3').innerHTML='<div class="done"><div class="big">✅</div><h2>Submitted</h2>'
+      +'<p>'+payload.sls.length+' SL record(s) saved.</p><span class="idpill">'+payload.submissionId+'</span>'
+      +'<br><br><button class="copybtn" onclick="location.reload()">Fill another</button></div>';
+    $('footer3').style.display='none';
+  } else { queue(payload); toast('Saved offline — will sync when online.'); }
+};
+
+/* ========================================================
+   FORM 4 — Assessment Data
+   ======================================================== */
+function refreshF4Schools(){
+  const partner=$('f4partner').value, sel=$('f4school');
+  const list=SCHOOLS.filter(s=>s.partner===partner);
+  sel.innerHTML = partner
+    ? (list.length ? '<option value="">Select school…</option>'+list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('')
+                   : '<option value="">No schools listed for this partner</option>')
+    : '<option value="">Select partner first…</option>';
+  $('f4code').value='';
+}
+$('f4partner').addEventListener('change', refreshF4Schools);
+$('f4school').addEventListener('change', ()=>{
+  const opt=$('f4school').selectedOptions[0];
+  $('f4code').value = opt ? (opt.dataset.code||'') : '';
+});
+function f4Preview(){
+  const paper=Number($('f4paper').value)||0, tab=Number($('f4tab').value)||0,
+        att=Number($('f4attendance').value)||0, tot=Number($('f4total').value)||0;
+  const assessed=paper+tab;
+  const pv=$('f4preview');
+  if(!tot && !assessed){ pv.textContent='Enter counts to see the split.'; pv.classList.remove('warn'); return; }
+  pv.textContent=`Assessed ${assessed} (paper ${paper} + tab ${tab}) · Present ${att} · Enrolled ${tot}`;
+  pv.classList.toggle('warn', assessed>att && att>0);
+}
+['f4paper','f4tab','f4attendance','f4total'].forEach(id=>$(id).addEventListener('input',f4Preview));
+$('f4date').value=new Date().toISOString().slice(0,10);
+$('f4date').max=new Date().toISOString().slice(0,10);
+
+$('submit4Btn').onclick = async () => {
+  const p=$('f4partner').value, sc=$('f4school').value,
+        gr=$('f4grade').value.trim(), sec=$('f4section').value.trim(),
+        tot=$('f4total').value.trim(), date=$('f4date').value,
+        att=$('f4attendance').value.trim(), iif=$('f4iif').value.trim();
+  if(!p) return toast('Select partner.');
+  if(!sc) return toast('Select school.');
+  if(!gr) return toast('Enter grade/class.');
+  if(!sec) return toast('Enter section.');
+  if(!tot) return toast('Enter total students.');
+  if(!date) return toast('Select baseline date.');
+  if(!att) return toast('Enter attendance.');
+  if(!iif) return toast('Enter IIF team.');
+
+  const payload={
+    formId:'form4_assessment_data', formVersion:'1.0',
+    submissionId:uuid(), submittedAt:new Date().toISOString(), token:getCfg().token,
+    header:{ partner:p, school:sc, schoolCode:$('f4code').value, grade:gr, section:sec },
+    assessment:{ totalStudents:Number(tot)||0, baselineDate:date, attendance:Number(att)||0,
+      paperCount:Number($('f4paper').value)||0, tabCount:Number($('f4tab').value)||0 },
+    team:{ iif:iif, volunteers:$('f4vol').value.trim() }
+  };
+  $('submit4Btn').disabled=true; $('submit4Btn').textContent='Sending…';
+  const ok=await send(payload);
+  $('submit4Btn').disabled=false; $('submit4Btn').textContent='Submit';
+  if(ok){
+    $('app4').innerHTML='<div class="done"><div class="big">✅</div><h2>Submitted</h2>'
+      +'<p>Assessment data saved.</p><span class="idpill">'+payload.submissionId+'</span>'
+      +'<br><br><button class="copybtn" onclick="location.reload()">Fill another</button></div>';
+    $('footer4').style.display='none';
+  } else { queue(payload); toast('Saved offline — will sync when online.'); }
 };
 
 /* ---------- boot ---------- */
