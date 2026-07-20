@@ -65,19 +65,116 @@
   .idpill{font-family:monospace;background:var(--pastel);padding:4px 8px;border-radius:6px}
   .banner{background:#FFF4E0;color:var(--warn);font-size:13px;padding:8px 12px;border-radius:10px;margin-bottom:12px;display:none}
   .banner.show{display:block}
+  /* Login */
+  .login-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px}
+  .login-box{width:100%;max-width:380px}
+  .login-logo{text-align:center;margin-bottom:28px}
+  .login-logo .k{font-size:12px;letter-spacing:.14em;color:var(--blue);font-weight:700;text-transform:uppercase}
+  .login-logo h1{font-size:22px;font-weight:800;color:var(--navy);margin:4px 0 0}
+  .btn-login{width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px}
+  .btn-login:disabled{opacity:.5}
+  /* Role badge */
+  .role-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em}
+  .role-admin{background:#FDE8F2;color:#9B0051}
+  .role-iif{background:var(--pastel);color:var(--navy)}
+  .role-school{background:#E8F8F0;color:#0B8457}
+  /* Dashboard tables */
+  .dash-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  .dash-table th{background:var(--navy);color:#fff;padding:8px 10px;text-align:left;font-weight:700}
+  .dash-table td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .dash-table tr:last-child td{border-bottom:none}
+  .dash-table tr:hover td{background:var(--pastel)}
+  /* Traffic light cells */
+  .tl-cell{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:14px}
+  .tl-green{background:#D4F5E3}
+  .tl-red{background:#FDDEDE}
+  /* Admin toggle grid */
+  .perm-grid{width:100%;border-collapse:collapse;font-size:13px}
+  .perm-grid th,.perm-grid td{padding:8px 10px;border:1px solid var(--line);text-align:center}
+  .perm-grid th{background:var(--navy);color:#fff;font-weight:700}
+  .perm-grid td:first-child{text-align:left;font-weight:600;background:var(--pastel)}
+  .toggle-wrap{display:flex;justify-content:center}
+  .toggle{position:relative;width:40px;height:22px;cursor:pointer}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:22px;transition:.2s}
+  .toggle input:checked+.toggle-slider{background:var(--blue)}
+  .toggle-slider:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+  .toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+  /* User list */
+  .user-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .user-row:last-child{border-bottom:none}
+  .user-info{flex:1;min-width:0}
+  .user-name{font-weight:700;font-size:14px}
+  .user-email{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .btn-sm{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn-sm.danger{border-color:var(--err);color:var(--err)}
+  .btn-sm.primary{border-color:var(--blue);color:var(--blue)}
+  /* PIN reveal */
+  .pin-reveal{background:#FFF4E0;border:1px solid #F0C060;border-radius:10px;padding:12px;font-size:14px;margin-top:10px}
+  .pin-reveal code{font-size:22px;font-weight:800;letter-spacing:.1em;color:var(--navy)}
+  /* Expandable row */
+  .expand-row{display:none;background:var(--pastel)}
+  .expand-row.open{display:table-row}
+  .expand-content{padding:12px;font-size:12px;color:var(--muted)}
+  /* Inqui Buddy */
+  .buddy-step{padding:0}
+  .buddy-team-card{display:block;margin-bottom:10px;padding:14px;text-align:left;border-radius:12px;cursor:pointer;transition:background .15s}
+  .buddy-team-card.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .buddy-team-card.on .buddy-sub{color:rgba(255,255,255,.8)}
+  .buddy-sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .sc-high{color:var(--ok)}
+  .sc-mid{color:var(--warn)}
+  .sc-low{color:var(--err)}
+  .buddy-btn{display:block;width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px}
+  .buddy-btn-primary{background:var(--blue);color:#fff}
+  .buddy-btn-primary:disabled{opacity:.45;cursor:default}
+  .buddy-btn-success{background:var(--ok);color:#fff}
+  .buddy-feedback{white-space:pre-wrap;font-size:14px;line-height:1.75;color:var(--ink)}
+  .buddy-spinner{display:inline-block;width:36px;height:36px;border:4px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-<header>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="display:none">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="k">Inqui-Lab · Think &amp; Make</div>
+        <h1>THINK &amp; MAKE 2026-27</h1>
+        <p style="color:var(--muted);font-size:14px;margin:4px 0 0">Implementation Tracker</p>
+      </div>
+      <div class="card">
+        <label>Email <span class="req">*</span></label>
+        <input id="loginEmail" type="email" inputmode="email" placeholder="your@email.com" autocomplete="email" />
+        <label>PIN <span class="req">*</span></label>
+        <input id="loginPin" type="password" inputmode="numeric" placeholder="Enter your PIN" autocomplete="current-password" />
+        <div class="err-msg show" id="loginErr" style="display:none;margin-top:8px"></div>
+        <button class="btn-login" id="loginBtn">Login</button>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:12px">
+        Contact your admin if you don't have access. &nbsp;·&nbsp;
+        <button onclick="openCfg()" style="background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;padding:0">⚙ Configure backend</button>
+      </p>
+    </div>
+  </div>
+</div>
+
+<header id="mainHeader" style="display:none">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div style="display:flex;align-items:flex-start;gap:10px">
       <button id="homeBtn" aria-label="Home" style="display:none;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;border-radius:10px;padding:4px 10px;cursor:pointer">←</button>
       <div>
-        <div class="k">Inqui-Lab · Think &amp; Make</div>
+        <div class="k">Inqui-Lab · Think &amp; Make <span id="envChip" style="display:none;background:#F0A500;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.06em;vertical-align:middle">TEST</span></div>
         <h1 id="hdrTitle">THINK &amp; MAKE 2026-27</h1>
       </div>
     </div>
-    <button id="cfgBtn" aria-label="Settings" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;border-radius:10px;padding:6px 10px;cursor:pointer">⚙</button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span id="hdrRoleBadge"></span>
+      <button id="cfgBtn" aria-label="Settings" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;border-radius:10px;padding:6px 10px;cursor:pointer">⚙</button>
+      <button id="logoutBtn" aria-label="Logout" title="Logout" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:16px;border-radius:10px;padding:6px 10px;cursor:pointer">↩</button>
+    </div>
   </div>
   <div class="progress"><span id="bar"></span></div>
 </header>
@@ -97,8 +194,7 @@
   <div class="card">
     <div class="sec-title"><span class="tag">Visit</span> Who &amp; where</div>
     <label>Partner <span class="req">*</span></label>
-    <select id="partner"><option value="">Select…</option>
-      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <select id="partner"><option value="">Select…</option></select>
     <label>School <span class="req">*</span></label>
     <select id="school"><option value="">Select partner first…</option></select>
     <div class="hint" id="schoolHint">Schools load from the Schools_List tab and filter by partner.</div>
@@ -236,8 +332,7 @@
   <div class="card">
     <div class="sec-title"><span class="tag">F2</span> Student data collection</div>
     <label>Partner <span class="req">*</span></label>
-    <select id="f2partner"><option value="">Select…</option>
-      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <select id="f2partner"><option value="">Select…</option></select>
     <label>School <span class="req">*</span></label>
     <select id="f2school"><option value="">Select partner first…</option></select>
     <label>School Code</label>
@@ -269,8 +364,7 @@
   <div class="card">
     <div class="sec-title"><span class="tag">F3</span> Where &amp; who</div>
     <label>Partner <span class="req">*</span></label>
-    <select id="f3partner"><option value="">Select…</option>
-      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <select id="f3partner"><option value="">Select…</option></select>
     <label>School <span class="req">*</span></label>
     <select id="f3school"><option value="">Select partner first…</option></select>
     <label>School Code</label>
@@ -311,8 +405,7 @@
   <div class="card">
     <div class="sec-title"><span class="tag">F4</span> Where</div>
     <label>Partner <span class="req">*</span></label>
-    <select id="f4partner"><option value="">Select…</option>
-      <option>Datla</option><option>Micron</option><option>HBL</option><option>UWH</option><option>ISADAK</option></select>
+    <select id="f4partner"><option value="">Select…</option></select>
     <label>School <span class="req">*</span></label>
     <select id="f4school"><option value="">Select partner first…</option></select>
     <label>School Code</label>
@@ -355,6 +448,250 @@
   <button class="btn-submit" id="submit4Btn" style="flex:1">Submit</button>
 </footer>
 
+<!-- SCHOOL DASHBOARD -->
+<main id="schoolDash" style="display:none">
+  <div class="card">
+    <div class="sec-title"><span class="tag">School</span> <span id="sdSchoolName">Your School</span></div>
+    <p class="hint" style="margin:0">Your school's submitted data. Contact IIF for updates.</p>
+  </div>
+  <div id="sdBuddyCard" class="card" style="display:none;cursor:pointer;text-align:center;padding:20px" onclick="showScreen('buddyScreen')">
+    <div style="font-size:28px;margin-bottom:6px">★</div>
+    <div style="font-weight:700;font-size:16px;color:var(--navy)">Inqui Buddy</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px">Innovation Evaluator</div>
+  </div>
+  <div id="sdContent"><p style="text-align:center;color:var(--muted);padding:40px 0">Loading…</p></div>
+</main>
+
+<!-- IIF AGGREGATE DASHBOARD -->
+<main id="iifDash" style="display:none">
+  <div class="card">
+    <div class="sec-title"><span class="tag">Dashboard</span> All Schools Status</div>
+    <label style="margin-top:4px">Filter by partner</label>
+    <div class="chips" id="dashPartnerChips">
+      <div class="chip on" data-p="">All</div>
+    </div>
+  </div>
+  <div id="dashContent"><p style="text-align:center;color:var(--muted);padding:40px 0">Loading…</p></div>
+</main>
+
+<!-- FORM COMPLETION TRACKER -->
+<main id="trackerScreen" style="display:none">
+  <div class="card">
+    <div class="sec-title"><span class="tag">Tracker</span> Form Completion</div>
+    <label style="margin-top:4px">Filter by partner</label>
+    <select id="trackerPartner"><option value="">All partners</option></select>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <div id="trackerContent"><p style="text-align:center;color:var(--muted);padding:24px 0">Loading…</p></div>
+  </div>
+</main>
+
+<!-- ADMIN: USER MANAGEMENT -->
+<main id="adminUsers" style="display:none">
+
+  <!-- LIST VIEW -->
+  <div id="umListView">
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div class="sec-title" style="margin:0"><span class="tag">Admin</span> User Management</div>
+      <button class="btn-submit" id="addUserBtn" style="border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer">+ Add User</button>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="filterName" placeholder="Search name…" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid var(--border,#dde3ea);border-radius:8px;font-size:13px" />
+        <select id="filterRole" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid var(--border,#dde3ea);border-radius:8px;font-size:13px">
+          <option value="">All Roles</option>
+          <option value="Admin">Admin</option>
+          <option value="IIF">IIF Member</option>
+          <option value="School">School</option>
+        </select>
+        <select id="filterPartner" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid var(--border,#dde3ea);border-radius:8px;font-size:13px"><option value="">All Partners</option></select>
+        <select id="filterSchool" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid var(--border,#dde3ea);border-radius:8px;font-size:13px"><option value="">All Schools</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <div id="userList"><p style="text-align:center;color:var(--muted);padding:24px 0">Loading…</p></div>
+    </div>
+  </div>
+
+  <!-- FORM VIEW -->
+  <div id="umFormView" style="display:none">
+    <div class="card" id="addUserForm">
+      <div class="sec-title"><span class="tag">New</span> <span id="addUserFormTitle">Add User</span></div>
+      <label>Full name <span class="req">*</span></label>
+      <input id="auName" placeholder="Full name" />
+      <label>Email <span class="req">*</span></label>
+      <input id="auEmail" type="email" placeholder="user@example.com" />
+      <label>Role <span class="req">*</span></label>
+      <select id="auRole">
+        <option value="">Select…</option>
+        <option value="Admin">Admin</option>
+        <option value="IIF">IIF Member</option>
+        <option value="School">School</option>
+      </select>
+      <div id="auSchoolCodeWrap" style="display:none">
+        <label>Partner <span class="req">*</span></label>
+        <select id="auPartner"><option value="">Select…</option></select>
+        <label>School <span class="req">*</span></label>
+        <select id="auSchool"><option value="">Select partner first…</option></select>
+        <label>School Code</label>
+        <input id="auSchoolCode" placeholder="auto-filled" readonly style="background:var(--pastel)" />
+      </div>
+      <label>Password <span style="color:var(--muted);font-weight:400">(leave blank to auto-generate)</span></label>
+      <input id="auPin" type="text" placeholder="Password or leave blank" />
+      <label>Status</label>
+      <div class="yn" data-yn="auActive">
+        <button type="button" data-v="Y" class="on">Active</button>
+        <button type="button" data-v="N">Inactive</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn-draft" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer" id="auCancel">Cancel</button>
+        <button class="btn-submit" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer" id="auSave">Save User</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- PASSWORD MODAL -->
+<div id="auPinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Password generated</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Share this with the user — it won't be shown again</div>
+    <code id="auPinCode" style="font-size:32px;font-weight:700;display:block;margin:0 0 20px;letter-spacing:3px;color:var(--primary,#0D3B4A)"></code>
+    <button class="btn-submit" id="auPinDone" style="width:100%;border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer">Done</button>
+  </div>
+</div>
+
+<!-- ADMIN: ACCESS CONTROL -->
+<main id="adminPerms" style="display:none">
+  <div class="card">
+    <div class="sec-title"><span class="tag">Admin</span> Role Access Control</div>
+    <p class="hint" style="margin:0 0 10px">Toggle which features each role can access. Admin access is always on.</p>
+    <div style="overflow-x:auto">
+      <table class="perm-grid" id="permGrid">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Form 1</th><th>Form 2</th><th>Form 3</th><th>Form 4</th>
+            <th>IIF Dash</th><th>Tracker</th><th>Edit</th><th>Admin</th><th>Buddy</th>
+          </tr>
+        </thead>
+        <tbody id="permBody"></tbody>
+      </table>
+    </div>
+    <button class="btn-submit" id="savePermsBtn" style="border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer;width:100%;margin-top:16px">Save Permissions</button>
+  </div>
+</main>
+
+<!-- INQUI BUDDY SCREEN — Step wizard -->
+<main id="buddyScreen" style="display:none">
+  <!-- Step 1: Partner -->
+  <div id="buddy-step1">
+    <div class="card">
+      <div class="sec-title"><span class="tag">Step 1 / 4</span> Select Partner</div>
+      <p class="hint">Choose the implementation partner for the school you want to evaluate.</p>
+      <div class="chips" id="buddyPartnerChips" style="gap:10px"></div>
+    </div>
+  </div>
+  <!-- Step 2: School -->
+  <div id="buddy-step2" style="display:none">
+    <div class="card">
+      <div class="sec-title"><span class="tag">Step 2 / 4</span> Select School</div>
+      <p id="buddySelectedPartner" class="hint" style="margin:0 0 10px"></p>
+      <label>School</label>
+      <select id="buddySchool" onchange="buddyOnSchoolChange()"><option value="">Select school…</option></select>
+      <label>School Code</label>
+      <input id="buddySchoolCode" readonly style="background:var(--pastel)" placeholder="auto-filled" />
+      <button id="buddyStep2Btn" class="buddy-btn buddy-btn-primary" style="margin-top:16px" disabled onclick="goToBuddyStep3()">Next →</button>
+      <button class="btn-draft" style="width:100%;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;margin-top:6px" onclick="buddyBack(1)">← Back</button>
+    </div>
+  </div>
+  <!-- Step 3: SL -->
+  <div id="buddy-step3" style="display:none">
+    <div class="card">
+      <div class="sec-title"><span class="tag">Step 3 / 4</span> Select Student Leader</div>
+      <div id="buddyLoadingTeams" style="text-align:center;padding:30px 0">
+        <div class="buddy-spinner"></div>
+        <p style="color:var(--muted);font-size:14px;margin:0">Loading team data…</p>
+      </div>
+      <div id="buddySLWrap" style="display:none">
+        <label>Student Leader (SL)</label>
+        <select id="buddySL" onchange="buddyOnSLChange()"><option value="">Select SL…</option></select>
+        <div class="row2" style="margin-top:12px">
+          <div><label style="margin-top:0">Cluster ID</label><input id="buddyClusterId" readonly style="background:var(--pastel)" placeholder="auto-filled" /></div>
+          <div><label style="margin-top:0">Grade / Section</label><input id="buddyGradeSec" readonly style="background:var(--pastel)" placeholder="auto-filled" /></div>
+        </div>
+        <button id="buddyStep3Btn" class="buddy-btn buddy-btn-primary" style="margin-top:16px" disabled onclick="goToBuddyStep4()">Next →</button>
+        <button class="btn-draft" style="width:100%;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;margin-top:6px" onclick="buddyBack(2)">← Back</button>
+      </div>
+      <div id="buddyNoTeamsWrap" style="display:none">
+        <div class="preview warn" style="margin-bottom:14px">No team data found for this school.</div>
+        <p style="font-size:13px;color:var(--muted)">Team data is extracted from the Form 2 student database photo. Tap below to extract it now (takes ~20 seconds).</p>
+        <button id="buddyExtractBtn" class="buddy-btn buddy-btn-primary" onclick="extractBuddyTeamData()">Extract Team Data from Form 2 Photo</button>
+        <div id="buddyExtractStatus" style="font-size:13px;margin-top:6px"></div>
+        <button class="btn-draft" style="width:100%;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;margin-top:6px" onclick="buddyBack(2)">← Back</button>
+      </div>
+    </div>
+  </div>
+  <!-- Step 4: Team -->
+  <div id="buddy-step4" style="display:none">
+    <div class="card">
+      <div class="sec-title"><span class="tag">Step 4 / 4</span> Select Team</div>
+      <p id="buddyClusterLabel" class="hint" style="margin:0 0 12px"></p>
+      <div id="buddyTeamList"></div>
+      <button id="buddyStep4Btn" class="buddy-btn buddy-btn-primary" style="display:none;margin-top:4px" onclick="showBuddyEvalScreen()">Evaluate This Team →</button>
+      <button class="btn-draft" style="width:100%;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;margin-top:6px" onclick="buddyBack(3)">← Back</button>
+    </div>
+  </div>
+</main>
+
+<!-- INQUI BUDDY EVAL SCREEN -->
+<main id="buddyEvalScreen" style="display:none">
+  <div class="card" id="buddyTeamCard"></div>
+  <div class="card">
+    <div class="sec-title"><span class="tag">Upload</span> Innovation Idea</div>
+    <label>Photo of the student's innovation idea sheet <span class="req">*</span></label>
+    <div class="hint">Ensure the full page with problem &amp; solution is visible and legible.</div>
+    <input id="buddyPhoto" type="file" accept="image/*" capture="environment" onchange="buddyPhotoChanged()" />
+    <img id="buddyPreview" style="display:none;width:100%;border-radius:10px;margin-top:12px;max-height:320px;object-fit:contain" alt="Preview" />
+  </div>
+  <div class="card">
+    <label>Audio recording of the team's idea presentation <span style="color:var(--muted);font-size:12px">(Optional)</span></label>
+    <div class="hint">Upload a short audio clip of the team presenting their idea.</div>
+    <input id="buddyAudio" type="file" accept="audio/*" onchange="buddyAudioChanged()" />
+    <div id="buddyAudioName" style="display:none;font-size:13px;color:var(--muted);margin-top:8px"></div>
+  </div>
+  <div style="padding:0 0 6px">
+    <button id="buddyEvalBtn" class="buddy-btn buddy-btn-primary" disabled onclick="runBuddyEval()">Evaluate Idea</button>
+  </div>
+  <div id="buddyLoading" style="display:none;text-align:center;padding:40px 20px">
+    <div class="buddy-spinner"></div>
+    <p id="buddyLoadingMsg" style="color:var(--muted);font-size:14px;margin:0">Analysing submission…</p>
+  </div>
+  <div id="buddyResults" style="display:none">
+    <div class="card">
+      <div class="sec-title"><span class="tag">Feedback</span> Mentor Feedback</div>
+      <div id="buddyFeedbackText" class="buddy-feedback"></div>
+    </div>
+    <button class="buddy-btn buddy-btn-success" onclick="downloadBuddyPDF()">Download PDF Report</button>
+    <div id="buddyBackToOverview" style="display:none;margin-top:6px">
+      <button class="btn-draft" style="width:100%;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer" onclick="showScreen('buddyOverviewScreen')">&#8592; Back to Overview</button>
+    </div>
+  </div>
+</main>
+
+<!-- INQUI BUDDY OVERVIEW SCREEN -->
+<main id="buddyOverviewScreen" style="display:none">
+  <div class="card">
+    <div class="sec-title"><span class="tag">Overview</span> <span id="boSchoolName">Teams Overview</span></div>
+    <div id="boStats" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div>
+  </div>
+  <div style="padding:0 0 6px">
+    <button class="buddy-btn buddy-btn-success" id="boDownloadBtn" style="display:none" onclick="downloadAllTeamsPDF()">&#x2B07; Download All Teams PDF</button>
+  </div>
+  <div id="boContent"><p style="text-align:center;color:var(--muted);padding:40px 0">Loading teams…</p></div>
+</main>
+
 <div class="toast" id="toast"></div>
 
 <div id="cfgModal" style="display:none;position:fixed;inset:0;background:rgba(13,59,74,.55);z-index:60;padding:20px;overflow:auto">
@@ -370,7 +707,8 @@
       <button class="btn-submit" style="flex:1;border:none;border-radius:12px;padding:13px;font-weight:700;color:#fff;cursor:pointer" id="cfgSave">Save</button>
     </div>
     <div class="hint" id="cfgMsg" style="margin-top:10px"></div>
-    <button id="cfgClose" style="margin-top:12px;width:100%;background:none;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer">Close</button>
+    <button id="cfgResetProd" style="margin-top:10px;width:100%;background:none;border:1px solid #F0A500;color:#B26A00;border-radius:10px;padding:10px;font-weight:600;cursor:pointer;font-size:13px">↩ Reset to production URL</button>
+    <button id="cfgClose" style="margin-top:8px;width:100%;background:none;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer">Close</button>
   </div>
 </div>
 
@@ -388,13 +726,23 @@ function getCfg(){
   catch(e){ return { url:DEFAULT_URL, token:DEFAULT_TOKEN }; }
 }
 function setCfg(url,token){ localStorage.setItem(CFG_KEY,JSON.stringify({url:url,token:token})); }
+function updateEnvChip(){
+  const c=getCfg();
+  const isTest = c.url && c.url !== DEFAULT_URL;
+  const chip=$('envChip');
+  if(chip){ chip.style.display=isTest?'inline':'none'; }
+}
 
 /* ---------- school master (partner-filtered dropdown) ---------- */
-const SCHOOLS_KEY='tm_schools_cache';
 let SCHOOLS=[];
+function schoolsCacheKey(){
+  // Per-backend cache so test and prod don't share the same list
+  const url=getCfg().url;
+  try{ return 'tm_schools_'+btoa(url).slice(0,16); }catch(e){ return 'tm_schools_default'; }
+}
 async function loadSchools(){
-  // use cache immediately if present
-  try{ SCHOOLS=JSON.parse(localStorage.getItem(SCHOOLS_KEY)||'[]'); }catch(e){ SCHOOLS=[]; }
+  const key=schoolsCacheKey();
+  try{ SCHOOLS=JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ SCHOOLS=[]; }
   const url=getCfg().url;
   if(!url) return;
   try{
@@ -402,19 +750,46 @@ async function loadSchools(){
     const j=await r.json();
     if(j.status==='ok' && Array.isArray(j.schools)){
       SCHOOLS=j.schools;
-      localStorage.setItem(SCHOOLS_KEY,JSON.stringify(SCHOOLS));
+      localStorage.setItem(key,JSON.stringify(SCHOOLS));
     }
   }catch(e){/* offline: keep cache */}
 }
 function refreshSchoolOptions(){
   const partner=$('partner').value;
   const sel=$('school');
+  if(!partner){ sel.innerHTML='<option value="">Select partner first…</option>'; $('schoolCode').value=''; return; }
   const list=SCHOOLS.filter(s=>s.partner===partner);
-  sel.innerHTML = partner
-    ? (list.length ? '<option value="">Select school…</option>' + list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('')
-                   : '<option value="">No schools listed for this partner</option>')
-    : '<option value="">Select partner first…</option>';
+  if(list.length){
+    sel.innerHTML='<option value="">Select school…</option>'+list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('');
+  } else if(SCHOOLS.length===0){
+    sel.innerHTML='<option value="">Schools not loaded — tap ⚙ → Test Schools</option>';
+  } else {
+    const partners=[...new Set(SCHOOLS.map(s=>s.partner))];
+    sel.innerHTML=`<option value="">No match for "${partner}" — sheet has: ${partners.join(', ')}</option>`;
+  }
   $('schoolCode').value='';
+}
+function refreshPartnerDropdowns(){
+  const partners=[...new Set(SCHOOLS.map(s=>s.partner).filter(Boolean))].sort();
+  const selOpts='<option value="">Select…</option>'+partners.map(p=>`<option>${p}</option>`).join('');
+  ['partner','f2partner','f3partner','f4partner'].forEach(id=>{
+    const el=$(id); if(!el) return;
+    const prev=el.value; el.innerHTML=selOpts;
+    if(prev) el.value=prev;
+  });
+  const tr=$('trackerPartner');
+  if(tr){ tr.innerHTML='<option value="">All partners</option>'+partners.map(p=>`<option>${p}</option>`).join(''); }
+  const chips=$('dashPartnerChips');
+  if(chips){
+    chips.innerHTML='<div class="chip on" data-p="">All</div>'
+      +partners.map(p=>`<div class="chip" data-p="${p}">${p}</div>`).join('');
+    chips.querySelectorAll('.chip').forEach(chip=>{
+      chip.onclick=()=>{
+        chips.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+        chip.classList.add('on'); dashPartner=chip.dataset.p; renderDashTable();
+      };
+    });
+  }
 }
 /* ======================================================= */
 
@@ -610,6 +985,16 @@ function readPhoto(id){
     r.readAsDataURL(f);
   });
 }
+function readAudio(id){
+  return new Promise((resolve)=>{
+    const f=$(id).files[0];
+    if(!f){ resolve(null); return; }
+    const r=new FileReader();
+    r.onload=()=>resolve({ name:f.name, mime:f.type||'audio/mpeg', data:String(r.result).split(',')[1] });
+    r.onerror=()=>resolve(null);
+    r.readAsDataURL(f);
+  });
+}
 function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:(r&0x3|0x8)).toString(16);});}
 
 /* ---------- validate ---------- */
@@ -709,7 +1094,7 @@ function showDone(id,queued){
     <p>${queued?'This will sync automatically when you reconnect.':'Data saved to the sheet.'}</p>
     <p>Submission ID<br><span class="idpill">${id}</span></p>
     <button class="copybtn" onclick="location.reload()">Fill another school</button></div>`;
-  document.querySelector('footer').style.display='none';
+  $('footer1').style.display='none';
   window.scrollTo(0,0);
 }
 
@@ -718,14 +1103,23 @@ let toastT;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);}
 
 /* ---------- network status ---------- */
-function netStatus(){$('offlineBanner').classList.toggle('show',!navigator.onLine);if(navigator.onLine)flushQueue();}
+function netStatus(){
+  ['offlineBanner','offlineBanner2','offlineBanner3','offlineBanner4'].forEach(id=>{
+    const el=$(id); if(el) el.classList.toggle('show',!navigator.onLine);
+  });
+  if(navigator.onLine) flushQueue();
+}
 window.addEventListener('online',netStatus);
 window.addEventListener('offline',netStatus);
 
 /* ---------- settings modal ---------- */
 function openCfg(){
   const c=getCfg();
-  $('cfgUrl').value=c.url||''; $('cfgToken').value=c.token||''; $('cfgMsg').textContent='';
+  const isTest = c.url && c.url !== DEFAULT_URL;
+  $('cfgUrl').value=c.url||''; $('cfgToken').value=c.token||'';
+  $('cfgMsg').textContent = isTest ? 'Currently using TEST backend.' : 'Currently using production backend.';
+  $('cfgMsg').style.color = isTest ? '#B26A00' : 'var(--ok)';
+  $('cfgResetProd').style.display = isTest ? 'block' : 'none';
   $('cfgModal').style.display='block';
 }
 $('cfgBtn').onclick=openCfg;
@@ -734,55 +1128,634 @@ $('cfgSave').onclick=()=>{
   const u=$('cfgUrl').value.trim();
   if(u && !/\/exec$/.test(u)){ $('cfgMsg').textContent='URL should end in /exec.'; return; }
   setCfg(u,$('cfgToken').value.trim());
-  $('cfgModal').style.display='none'; toast('Settings saved ✓'); flushQueue(); loadSchools().then(refreshSchoolOptions);
+  updateEnvChip();
+  $('cfgModal').style.display='none'; toast('Settings saved ✓'); flushQueue(); loadSchools().then(()=>{ refreshPartnerDropdowns(); refreshSchoolOptions(); });
+};
+$('cfgResetProd').onclick=()=>{
+  if(!confirm('Reset to the production backend URL?')) return;
+  setCfg('',DEFAULT_TOKEN); updateEnvChip();
+  $('cfgUrl').value=''; $('cfgToken').value=DEFAULT_TOKEN;
+  $('cfgMsg').textContent='Switched to production URL.';
+  flushQueue(); loadSchools().then(()=>{ refreshPartnerDropdowns(); refreshSchoolOptions(); });
+  toast('Switched to production ✓');
 };
 $('cfgTest').onclick=async()=>{
   const u=$('cfgUrl').value.trim();
-  if(!u){ $('cfgMsg').textContent='Enter a URL first.'; return; }
-  $('cfgMsg').textContent='Testing…';
-  try{ const r=await fetch(u); const j=await r.json();
-    $('cfgMsg').textContent = j.status==='ok' ? 'Connected ✓ backend is live.' : 'Reached it, unexpected reply.';
-  }catch(e){ $('cfgMsg').textContent='Could not reach the URL. Check it and that access = Anyone.'; }
+  if(!u){ $('cfgMsg').textContent='Enter a URL first.'; $('cfgMsg').style.color='var(--err)'; return; }
+  $('cfgMsg').textContent='Testing schools…'; $('cfgMsg').style.color='inherit';
+  try{
+    const r=await fetch(u+(u.includes('?')?'&':'?')+'action=schools');
+    const j=await r.json();
+    if(j.status==='ok'&&Array.isArray(j.schools)){
+      const partners=[...new Set(j.schools.map(s=>s.partner))];
+      if(j.schools.length){
+        $('cfgMsg').textContent=`✓ ${j.schools.length} schools found. Partners: ${partners.join(', ')}`;
+        $('cfgMsg').style.color='var(--ok)';
+      } else {
+        $('cfgMsg').textContent='Connected but 0 schools returned. Check Schools_List tab name and column headers (need: Partner, School, School Code).';
+        $('cfgMsg').style.color='#B26A00';
+      }
+    } else {
+      $('cfgMsg').textContent='Unexpected response: '+JSON.stringify(j).slice(0,120);
+      $('cfgMsg').style.color='var(--err)';
+    }
+  }catch(e){ $('cfgMsg').textContent='Could not reach URL. Check it ends in /exec and Who has access = Anyone.'; $('cfgMsg').style.color='var(--err)'; }
 };
 
-/* ---------- screen navigation ---------- */
-const FORMS = [
-  { id:'form1', title:'Form 1 · Orientation Data', active:true },
-  { id:'form2', title:'Form 2 · Student Data Collection', active:true },
-  { id:'form3', title:'Form 3 · SL Selection Assessment', active:true },
-  { id:'form4', title:'Form 4 · Assessment Data', active:true },
-  { id:'form5', title:'Form 5', active:false }
+/* ============================================================
+   SESSION + AUTH
+   ============================================================ */
+const SESSION_KEY='tm_session';
+function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){ return null; } }
+function setSession(s){ localStorage.setItem(SESSION_KEY,JSON.stringify(s)); }
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+function sessionToken(){ const s=getSession(); return s?s.token:''; }
+function hasPerm(key){ const s=getSession(); return s&&s.permissions&&s.permissions[key]; }
+
+/* --- Login --- */
+$('loginBtn').onclick = async () => {
+  const email=$('loginEmail').value.trim(), pin=$('loginPin').value.trim();
+  if(!email||!pin){ showLoginErr('Enter email and PIN.'); return; }
+  $('loginBtn').disabled=true; $('loginBtn').textContent='Logging in…';
+  const url=getCfg().url;
+  if(!url){ showLoginErr('Backend URL not set. Tap ⚙ after login.'); $('loginBtn').disabled=false; $('loginBtn').textContent='Login'; return; }
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'login',email,pin})});
+    const j=await r.json();
+    if(j.status==='ok'){
+      setSession({name:j.name,role:j.role,schoolCode:j.schoolCode,token:j.token,permissions:j.permissions});
+      bootAfterLogin();
+    } else {
+      showLoginErr(j.message||'Login failed.');
+      $('loginBtn').disabled=false; $('loginBtn').textContent='Login';
+    }
+  }catch(e){
+    showLoginErr('Could not reach server. Check connection.');
+    $('loginBtn').disabled=false; $('loginBtn').textContent='Login';
+  }
+};
+$('loginEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginPin').focus(); });
+$('loginPin').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginBtn').click(); });
+function showLoginErr(msg){ const el=$('loginErr'); el.textContent=msg; el.style.display='block'; }
+
+/* --- Logout --- */
+$('logoutBtn').onclick=()=>{
+  if(confirm('Log out?')){ clearSession(); showAuthScreen(); }
+};
+
+function showAuthScreen(){
+  $('loginScreen').style.display='block';
+  $('mainHeader').style.display='none';
+  hideAllScreens();
+}
+
+function bootAfterLogin(){
+  $('loginScreen').style.display='none';
+  $('mainHeader').style.display='block';
+  const s=getSession();
+  // Role badge + env chip in header
+  const role=(s&&s.role)||'';
+  $('hdrRoleBadge').innerHTML=`<span class="role-badge role-${role.toLowerCase()}">${role}</span>`;
+  updateEnvChip();
+  // Route by role
+  renderMenu();
+  if(role==='School'){ showScreen('schoolDash'); }
+  else { showScreen('home'); restoreDraft(); }
+  updateQueueBanner(); netStatus(); updateBar();
+  loadSchools().then(()=>{ refreshPartnerDropdowns(); refreshSchoolOptions(); refreshF2Schools(); });
+}
+
+/* ============================================================
+   SCREEN NAVIGATION (role-aware)
+   ============================================================ */
+const ALL_SCREENS = ['home','app','app2','app3','app4','schoolDash','iifDash','trackerScreen','adminUsers','adminPerms','buddyScreen','buddyEvalScreen','buddyOverviewScreen'];
+const ALL_FOOTERS = ['footer1','footer2','footer3','footer4'];
+function hideAllScreens(){
+  ALL_SCREENS.forEach(id=>{ const el=$(id); if(el) el.style.display='none'; });
+  ALL_FOOTERS.forEach(id=>{ const el=$(id); if(el) el.style.display='none'; });
+}
+
+const MENU_ITEMS = [
+  { id:'form1', title:'Form 1 · Orientation Data',       perm:'form1',      icon:'📋' },
+  { id:'form2', title:'Form 2 · Student Data',           perm:'form2',      icon:'👥' },
+  { id:'form3', title:'Form 3 · SL Selection',           perm:'form3',      icon:'⭐' },
+  { id:'form4', title:'Form 4 · Assessment Data',        perm:'form4',      icon:'📊' },
+  { id:'iifDash',      title:'School Dashboard',         perm:'iifDash',    icon:'🏫' },
+  { id:'trackerScreen',title:'Form Completion Tracker',  perm:'tracker',    icon:'✅' },
+  { id:'adminUsers',   title:'Admin · User Management',  perm:'adminPanel', icon:'👤' },
+  { id:'adminPerms',   title:'Admin · Access Control',   perm:'adminPanel', icon:'🔒' },
+  { id:'buddyScreen',  title:'Inqui Buddy · Innovation Evaluator', perm:'buddy', icon:'★' },
 ];
+
 function renderMenu(){
   const m=$('formMenu'); m.innerHTML='';
-  FORMS.forEach(f=>{
+  MENU_ITEMS.forEach(f=>{
+    if(!hasPerm(f.perm)) return;
     const b=document.createElement('button');
-    b.textContent = f.active ? f.title : f.title+' · coming soon';
-    b.disabled = !f.active;
+    b.innerHTML=`${f.icon} ${f.title}`;
     b.style.cssText='display:block;width:100%;text-align:left;margin-bottom:12px;padding:18px 16px;'
-      +'border-radius:14px;border:1px solid var(--line);font-size:16px;font-weight:700;cursor:pointer;'
-      +(f.active?'background:#fff;color:var(--navy)':'background:#f2f5f7;color:#9fb3bd;cursor:not-allowed');
-    if(f.active) b.onclick=()=>showScreen(f.id);
+      +'border-radius:14px;border:1px solid var(--line);font-size:16px;font-weight:700;cursor:pointer;background:#fff;color:var(--navy)';
+    b.onclick=()=>showScreen(f.id);
     m.appendChild(b);
   });
 }
+
 function showScreen(which){
-  const home=$('home'), a1=$('app'), f1=$('footer1'), a2=$('app2'), f2=$('footer2'),
-        a3=$('app3'), f3=$('footer3'), a4=$('app4'), f4=$('footer4');
-  home.style.display='none'; a1.style.display='none'; f1.style.display='none';
-  a2.style.display='none'; f2.style.display='none';
-  a3.style.display='none'; f3.style.display='none';
-  a4.style.display='none'; f4.style.display='none';
-  $('homeBtn').style.display = which==='home' ? 'none' : 'block';
+  hideAllScreens();
+  $('homeBtn').style.display = (which==='home'||which==='schoolDash') ? 'none' : 'block';
   $('bar').style.width='0%';
-  if(which==='home'){ home.style.display='block'; $('hdrTitle').textContent='THINK & MAKE 2026-27'; updateQueueBanner(); }
-  else if(which==='form1'){ a1.style.display='block'; f1.style.display='flex'; $('hdrTitle').textContent='School Orientation — Form 1'; refreshSchoolOptions(); updateBar(); }
-  else if(which==='form2'){ a2.style.display='block'; f2.style.display='flex'; $('hdrTitle').textContent='Student Data — Form 2'; refreshF2Schools(); }
-  else if(which==='form3'){ a3.style.display='block'; f3.style.display='flex'; $('hdrTitle').textContent='SL Selection — Form 3'; refreshF3Schools(); if(!slState.length){ slState.push(blankSL()); } renderSLs(); }
-  else if(which==='form4'){ a4.style.display='block'; f4.style.display='flex'; $('hdrTitle').textContent='Assessment Data — Form 4'; refreshF4Schools(); }
+  if(which==='home'){
+    $('home').style.display='block'; $('hdrTitle').textContent='THINK & MAKE 2026-27'; updateQueueBanner();
+  } else if(which==='form1'){
+    $('app').style.display='block'; $('footer1').style.display='flex';
+    $('hdrTitle').textContent='School Orientation — Form 1'; refreshSchoolOptions(); updateBar();
+  } else if(which==='form2'){
+    $('app2').style.display='block'; $('footer2').style.display='flex';
+    $('hdrTitle').textContent='Student Data — Form 2'; refreshF2Schools();
+  } else if(which==='form3'){
+    $('app3').style.display='block'; $('footer3').style.display='flex';
+    $('hdrTitle').textContent='SL Selection — Form 3'; refreshF3Schools();
+    if(!slState.length){ slState.push(blankSL()); } renderSLs();
+  } else if(which==='form4'){
+    $('app4').style.display='block'; $('footer4').style.display='flex';
+    $('hdrTitle').textContent='Assessment Data — Form 4'; refreshF4Schools();
+  } else if(which==='schoolDash'){
+    $('schoolDash').style.display='block'; $('hdrTitle').textContent='My School Dashboard';
+    $('sdBuddyCard').style.display='none';
+    if(sdData){ showSchoolMenu(); } else { loadSchoolDashboard(); }
+  } else if(which==='iifDash'){
+    $('iifDash').style.display='block'; $('hdrTitle').textContent='All Schools Dashboard';
+    loadIIFDashboard();
+  } else if(which==='trackerScreen'){
+    $('trackerScreen').style.display='block'; $('hdrTitle').textContent='Form Completion Tracker';
+    loadTracker();
+  } else if(which==='adminUsers'){
+    $('adminUsers').style.display='block'; $('hdrTitle').textContent='User Management';
+    loadUserList();
+  } else if(which==='adminPerms'){
+    $('adminPerms').style.display='block'; $('hdrTitle').textContent='Access Control';
+    renderPermGrid();
+  } else if(which==='buddyScreen'){
+    $('buddyScreen').style.display='block'; $('hdrTitle').textContent='Inqui Buddy';
+    loadBuddyScreen();
+  } else if(which==='buddyEvalScreen'){
+    $('buddyEvalScreen').style.display='block'; $('hdrTitle').textContent='Inqui Buddy · Evaluate';
+  } else if(which==='buddyOverviewScreen'){
+    $('buddyOverviewScreen').style.display='block'; $('hdrTitle').textContent='Inqui Buddy · Teams';
+    loadBuddyOverview();
+  }
   window.scrollTo(0,0);
 }
-$('homeBtn').onclick=()=>showScreen('home');
+$('homeBtn').onclick=()=>{
+  const s=getSession();
+  if(s&&s.role==='School'){ showScreen('schoolDash'); }
+  else { showScreen('home'); }
+};
+
+/* ============================================================
+   SCHOOL DASHBOARD
+   ============================================================ */
+async function loadSchoolDashboard(){
+  const s=getSession(); if(!s) return;
+  const code=s.schoolCode;
+  $('sdSchoolName').textContent=s.name||'Your School';
+  $('sdContent').innerHTML='<p style="text-align:center;color:var(--muted);padding:40px 0">Loading…</p>';
+  const url=getCfg().url;
+  if(!url){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
+  try{
+    const r=await fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(s.token));
+    const j=await r.json();
+    if(j.status!=='ok'){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
+    renderSchoolDashboard(j.data);
+  }catch(e){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">Could not load data. Try again.</p>'; }
+}
+
+function renderSchoolDashboard(data){
+  sdData=data;
+  showSchoolMenu();
+}
+
+function showSchoolMenu(){
+  $('hdrTitle').textContent='My School Dashboard';
+  $('homeBtn').style.display='none';
+  $('sdBuddyCard').style.display='none';
+  const btnStyle='display:block;width:100%;text-align:left;margin-bottom:12px;padding:18px 16px;'
+    +'border-radius:14px;border:1px solid var(--line);font-size:16px;font-weight:700;cursor:pointer;background:#fff;color:var(--navy)';
+  const FORMS=[
+    {key:'form1', tag:'Form 1', title:'School Orientation',  dataKey:'form1_school_orientation'},
+    {key:'form2', tag:'Form 2', title:'Student Data',        dataKey:'form2_student_data'},
+    {key:'form3', tag:'Form 3', title:'SL Selection',        dataKey:'form3_sl_selection'},
+    {key:'form4', tag:'Form 4', title:'Assessment Data',     dataKey:'form4_assessment_data'},
+  ];
+  let html='';
+  FORMS.forEach(f=>{
+    const submitted=!!(sdData&&sdData[f.dataKey]);
+    const status=submitted
+      ?'<span style="float:right;font-size:13px;font-weight:400;color:#27ae60">&#10003; Submitted</span>'
+      :'<span style="float:right;font-size:13px;font-weight:400;color:var(--muted)">Not yet submitted</span>';
+    html+=`<button onclick="showSchoolFormDetail('${f.key}')" style="${btnStyle}"><span class="tag">${f.tag}</span> ${f.title}${status}</button>`;
+  });
+  if(hasPerm('buddy')){
+    html+=`<button onclick="showScreen('buddyScreen')" style="${btnStyle}">&#9733; Inqui Buddy &middot; Innovation Evaluator</button>`;
+  }
+  $('sdContent').innerHTML=html;
+}
+
+function showSchoolFormDetail(which){
+  if(!sdData) return;
+  $('homeBtn').style.display='block';
+  const d1=sdData['form1_school_orientation'], d2=sdData['form2_student_data'],
+        d3=sdData['form3_sl_selection'], d4=sdData['form4_assessment_data'];
+  let html='', title='';
+  if(which==='form1'){
+    title='Form 1 · School Orientation';
+    html='<div class="card"><div class="sec-title"><span class="tag">Form 1</span> School Orientation</div>';
+    if(d1){
+      html+=`<table class="dash-table">
+        <tr><td><b>Partner</b></td><td>${d1['Partner']||'—'}</td></tr>
+        <tr><td><b>Visit date</b></td><td>${d1['Visit Date']||'—'}</td></tr>
+        <tr><td><b>Visited by</b></td><td>${d1['Visited By']||'—'}</td></tr>
+        <tr><td><b>Programme year</b></td><td>${d1['Programme Year']||'—'}</td></tr>
+        <tr><td><b>Principal</b></td><td>${d1['Principal Name']||'—'}</td></tr>
+        <tr><td><b>Assigned teacher</b></td><td>${d1['Teacher Name']||'—'}</td></tr>
+        <tr><td><b>Lab room</b></td><td>${d1['Lab Room']||'—'}</td></tr>
+        <tr><td><b>Internet</b></td><td>${d1['Internet']||'—'}</td></tr>
+      </table>`;
+    } else html+='<p class="hint">Not yet submitted for this school.</p>';
+    html+='</div>';
+  } else if(which==='form2'){
+    title='Form 2 · Student Data';
+    html='<div class="card"><div class="sec-title"><span class="tag">Form 2</span> Student Data</div>';
+    if(d2){
+      html+=`<table class="dash-table">
+        <tr><td><b>Grade</b></td><td>${d2['Grade']||'—'}</td></tr>
+        <tr><td><b>Section</b></td><td>${d2['Section']||'—'}</td></tr>
+        <tr><td><b>Total students</b></td><td>${d2['Total Students']||'—'}</td></tr>
+        <tr><td><b>Submitted</b></td><td>${(d2['Submitted At']||'').slice(0,10)||'—'}</td></tr>
+      </table>`;
+    } else html+='<p class="hint">Not yet submitted.</p>';
+    html+='</div>';
+  } else if(which==='form3'){
+    title='Form 3 · SL Selection';
+    html='<div class="card"><div class="sec-title"><span class="tag">Form 3</span> SL Selection</div>';
+    if(d3){
+      let sls=[]; try{ sls=JSON.parse(d3['SLs (JSON)']||'[]'); }catch(e){}
+      html+=`<p style="font-size:13px;margin:0 0 8px">${sls.length} Student Leader(s) recorded.</p>`;
+      if(sls.length){
+        html+='<table class="dash-table"><tr><th>Name</th><th>Status</th><th>Interested</th></tr>';
+        sls.forEach(sl=>{ html+=`<tr><td>${sl.name||'—'}</td><td>${sl.status||'—'}</td><td>${sl.interested||'—'}</td></tr>`; });
+        html+='</table>';
+      }
+    } else html+='<p class="hint">Not yet submitted.</p>';
+    html+='</div>';
+  } else if(which==='form4'){
+    title='Form 4 · Assessment Data';
+    html='<div class="card"><div class="sec-title"><span class="tag">Form 4</span> Assessment Data</div>';
+    if(d4){
+      const paper=Number(d4['Paper Count'])||0, tab=Number(d4['Tab Count'])||0;
+      html+=`<table class="dash-table">
+        <tr><td><b>Baseline date</b></td><td>${d4['Baseline Date']||'—'}</td></tr>
+        <tr><td><b>Total students</b></td><td>${d4['Total Students']||'—'}</td></tr>
+        <tr><td><b>Attendance</b></td><td>${d4['Attendance']||'—'}</td></tr>
+        <tr><td><b>Assessed</b></td><td>Paper: ${paper} &middot; Tab: ${tab} &middot; Total: ${paper+tab}</td></tr>
+      </table>`;
+    } else html+='<p class="hint">Not yet submitted.</p>';
+    html+='</div>';
+  }
+  $('hdrTitle').textContent=title;
+  $('sdContent').innerHTML=html;
+}
+
+/* ============================================================
+   IIF AGGREGATE DASHBOARD
+   ============================================================ */
+let sdData=null;
+let dashData=[], dashPartner='';
+async function loadIIFDashboard(){
+  const s=getSession(); if(!s) return;
+  $('dashContent').innerHTML='<p style="text-align:center;color:var(--muted);padding:40px 0">Loading…</p>';
+  const url=getCfg().url;
+  if(!url){ $('dashContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
+  try{
+    const r=await fetch(url+'?action=allSchoolStatus&token='+encodeURIComponent(s.token));
+    const j=await r.json();
+    if(j.status!=='ok'){ $('dashContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
+    dashData=j.schools||[];
+    renderDashTable();
+  }catch(e){ $('dashContent').innerHTML='<p style="color:var(--err);padding:20px">Could not load. Try again.</p>'; }
+}
+
+function renderDashTable(){
+  const filtered=dashPartner ? dashData.filter(s=>s.partner===dashPartner) : dashData;
+  if(!filtered.length){ $('dashContent').innerHTML='<p style="text-align:center;color:var(--muted);padding:24px 0">No schools found.</p>'; return; }
+  let html='<div style="overflow-x:auto"><table class="dash-table"><thead><tr>'
+    +'<th>School</th><th>F1</th><th>F2</th><th>F3</th><th>F4</th><th>Partner</th></tr></thead><tbody>';
+  filtered.forEach((sch,idx)=>{
+    const tl=k=>sch[k]==='submitted'?'<span class="tl-cell tl-green">✓</span>':'<span class="tl-cell tl-red">—</span>';
+    html+=`<tr style="cursor:pointer" onclick="toggleDashRow(${idx})">
+      <td><b>${sch.name}</b></td>
+      <td>${tl('form1')}</td><td>${tl('form2')}</td><td>${tl('form3')}</td><td>${tl('form4')}</td>
+      <td>${sch.partner||'—'}</td></tr>
+      <tr class="expand-row" id="dashRow${idx}"><td colspan="6">
+        <div class="expand-content">
+          <b>School Code:</b> ${sch.code||'—'}<br>
+          ${sch.form1Date?'<b>F1 submitted:</b> '+String(sch.form1Date).slice(0,10)+'<br>':''}
+          ${sch.form2Date?'<b>F2 submitted:</b> '+String(sch.form2Date).slice(0,10)+'<br>':''}
+          ${sch.form3Date?'<b>F3 submitted:</b> '+String(sch.form3Date).slice(0,10)+'<br>':''}
+          ${sch.form4Date?'<b>F4 submitted:</b> '+String(sch.form4Date).slice(0,10)+'<br>':''}
+        </div></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  $('dashContent').innerHTML=html;
+}
+
+function toggleDashRow(idx){ const el=$('dashRow'+idx); if(el) el.classList.toggle('open'); }
+
+// Partner filter chips for dashboard are wired dynamically by refreshPartnerDropdowns()
+
+/* ============================================================
+   FORM COMPLETION TRACKER
+   ============================================================ */
+async function loadTracker(){
+  const s=getSession(); if(!s) return;
+  $('trackerContent').innerHTML='<p style="text-align:center;color:var(--muted);padding:24px 0">Loading…</p>';
+  const url=getCfg().url;
+  if(!url){ $('trackerContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
+  try{
+    const r=await fetch(url+'?action=allSchoolStatus&token='+encodeURIComponent(s.token));
+    const j=await r.json();
+    if(j.status!=='ok'){ $('trackerContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
+    renderTrackerTable(j.schools||[]);
+    $('trackerPartner').onchange=()=>renderTrackerTable(j.schools||[]);
+  }catch(e){ $('trackerContent').innerHTML='<p style="color:var(--err);padding:20px">Could not load. Try again.</p>'; }
+}
+
+function renderTrackerTable(schools){
+  const partner=$('trackerPartner').value;
+  const filtered=partner ? schools.filter(s=>s.partner===partner) : schools;
+  if(!filtered.length){ $('trackerContent').innerHTML='<p style="text-align:center;color:var(--muted);padding:24px 0">No schools.</p>'; return; }
+  const cell=(submitted,date)=>{
+    const bg=submitted?'#D4F5E3':'#FDDEDE', icon=submitted?'✓':'✕', color=submitted?'#0B8457':'#C0392B';
+    return `<td style="text-align:center;background:${bg};color:${color};font-weight:700" title="${date||''}">${icon}</td>`;
+  };
+  let html='<table class="dash-table"><thead><tr>'
+    +'<th>School</th><th>Partner</th><th>Form 1</th><th>Form 2</th><th>Form 3</th><th>Form 4</th>'
+    +'<th>Done</th></tr></thead><tbody>';
+  filtered.forEach(sch=>{
+    const forms=['form1','form2','form3','form4'];
+    const done=forms.filter(f=>sch[f]==='submitted').length;
+    html+=`<tr><td><b>${sch.name}</b></td><td>${sch.partner||'—'}</td>`;
+    forms.forEach(f=>{ html+=cell(sch[f]==='submitted',sch[f+'Date']); });
+    html+=`<td style="text-align:center;font-weight:700">${done}/4</td></tr>`;
+  });
+  html+='</tbody></table>';
+  $('trackerContent').innerHTML=html;
+}
+
+/* ============================================================
+   ADMIN: USER MANAGEMENT
+   ============================================================ */
+let auActiveVal='Y';
+let allUsers=[];
+
+function showUserList(){ $('umListView').style.display='block'; $('umFormView').style.display='none'; }
+function showUserForm(){ $('umListView').style.display='none'; $('umFormView').style.display='block'; window.scrollTo(0,0); }
+
+document.querySelectorAll('[data-yn="auActive"] button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('[data-yn="auActive"] button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on'); auActiveVal=btn.dataset.v;
+  };
+});
+$('auRole').onchange=()=>{
+  const isSchool=$('auRole').value==='School';
+  $('auSchoolCodeWrap').style.display=isSchool?'block':'none';
+  if(isSchool) auPopulatePartners();
+};
+function auPopulatePartners(){
+  const partners=[...new Set(SCHOOLS.map(s=>s.partner).filter(Boolean))].sort();
+  $('auPartner').innerHTML='<option value="">Select…</option>'+partners.map(p=>`<option>${p}</option>`).join('');
+  $('auSchool').innerHTML='<option value="">Select partner first…</option>';
+  $('auSchoolCode').value='';
+}
+$('auPartner').onchange=()=>{
+  const partner=$('auPartner').value;
+  if(!partner){ $('auSchool').innerHTML='<option value="">Select partner first…</option>'; $('auSchoolCode').value=''; return; }
+  const list=SCHOOLS.filter(s=>s.partner===partner);
+  $('auSchool').innerHTML='<option value="">Select school…</option>'+list.map(s=>`<option value="${s.name}" data-code="${s.code}">${s.name}</option>`).join('');
+  $('auSchoolCode').value='';
+};
+$('auSchool').onchange=()=>{
+  const opt=$('auSchool').selectedOptions[0];
+  $('auSchoolCode').value=opt?(opt.dataset.code||''):'';
+};
+$('addUserBtn').onclick=()=>{ resetUserForm(); $('addUserFormTitle').textContent='Add User'; showUserForm(); };
+$('auCancel').onclick=()=>showUserList();
+$('auPinDone').onclick=()=>{ $('auPinModal').style.display='none'; };
+
+function resetUserForm(){
+  ['auName','auEmail','auPin','auSchoolCode'].forEach(id=>$(id).value='');
+  $('auEmail').readOnly=false; $('auEmail').style.background='';
+  $('auRole').value='';
+  $('auPartner').innerHTML='<option value="">Select…</option>';
+  $('auSchool').innerHTML='<option value="">Select partner first…</option>';
+  $('auSchoolCodeWrap').style.display='none';
+  auActiveVal='Y';
+  document.querySelectorAll('[data-yn="auActive"] button').forEach(b=>b.classList.toggle('on',b.dataset.v==='Y'));
+}
+
+function populateFilterDropdowns(){
+  const partners=[...new Set(SCHOOLS.map(s=>s.partner).filter(Boolean))].sort();
+  $('filterPartner').innerHTML='<option value="">All Partners</option>'+partners.map(p=>`<option>${p}</option>`).join('');
+  refreshFilterSchools();
+}
+function refreshFilterSchools(){
+  const partner=$('filterPartner').value;
+  const list=partner?SCHOOLS.filter(s=>s.partner===partner):SCHOOLS;
+  const names=[...new Set(list.map(s=>s.name).filter(Boolean))].sort();
+  $('filterSchool').innerHTML='<option value="">All Schools</option>'+names.map(s=>`<option>${s}</option>`).join('');
+  $('filterSchool').value='';
+}
+
+function applyUserFilters(){
+  const name=$('filterName').value.toLowerCase();
+  const role=$('filterRole').value;
+  const partner=$('filterPartner').value;
+  const school=$('filterSchool').value;
+  const filtered=allUsers.filter(u=>{
+    if(name&&!(u.name||'').toLowerCase().includes(name)) return false;
+    if(role&&u.role!==role) return false;
+    if(partner||school){
+      const match=SCHOOLS.find(s=>s.code===u.schoolCode);
+      if(partner&&(!match||match.partner!==partner)) return false;
+      if(school&&(!match||match.name!==school)) return false;
+    }
+    return true;
+  });
+  renderUserList(filtered);
+}
+
+['filterName','filterRole','filterSchool'].forEach(id=>{
+  $(id).oninput=applyUserFilters; $(id).onchange=applyUserFilters;
+});
+$('filterPartner').onchange=()=>{ refreshFilterSchools(); applyUserFilters(); };
+
+async function loadUserList(){
+  $('userList').innerHTML='<p style="text-align:center;color:var(--muted);padding:24px 0">Loading…</p>';
+  const s=getSession(); if(!s) return;
+  const url=getCfg().url;
+  if(!url){ $('userList').innerHTML='<p style="color:var(--err)">Backend URL not set.</p>'; return; }
+  try{
+    const r=await fetch(url+'?action=listUsers&token='+encodeURIComponent(s.token));
+    const j=await r.json();
+    if(j.status!=='ok'){ $('userList').innerHTML='<p style="color:var(--err)">'+j.message+'</p>'; return; }
+    allUsers=(j.users||[]).reverse();
+    populateFilterDropdowns();
+    applyUserFilters();
+  }catch(e){
+    $('userList').innerHTML='<p style="color:var(--err)">Could not load users.</p>';
+  }
+}
+
+function renderUserList(users){
+  if(!users.length){ $('userList').innerHTML='<p class="hint" style="text-align:center">No users found.</p>'; return; }
+  $('userList').innerHTML=users.map(u=>`
+    <div class="user-row">
+      <div class="user-info">
+        <div class="user-name">${u.name||'—'} <span class="role-badge role-${(u.role||'').toLowerCase()}">${u.role||''}</span></div>
+        <div class="user-email">${u.email}</div>
+        ${u.schoolCode?`<div class="hint" style="margin:2px 0 0">Code: ${u.schoolCode}</div>`:''}
+      </div>
+      <button class="btn-sm primary" onclick='editUser(${JSON.stringify(u)})'>Edit</button>
+      <button class="btn-sm ${u.active==='Y'?'danger':''}" onclick="toggleUser('${u.email}','${u.active==='Y'?'N':'Y'}')">${u.active==='Y'?'Deactivate':'Activate'}</button>
+    </div>`).join('');
+}
+
+function editUser(u){
+  resetUserForm();
+  $('addUserFormTitle').textContent='Edit User';
+  $('auName').value=u.name||''; $('auEmail').value=u.email||'';
+  $('auEmail').readOnly=true; $('auEmail').style.background='var(--pastel)';
+  $('auPin').value=u.pin||'';
+  $('auRole').value=u.role||'';
+  if(u.role==='School'){
+    auPopulatePartners();
+    const match=SCHOOLS.find(s=>s.code===u.schoolCode);
+    if(match){
+      $('auPartner').value=match.partner;
+      $('auPartner').onchange();
+      $('auSchool').value=match.name;
+      $('auSchoolCode').value=match.code;
+    }
+    $('auSchoolCodeWrap').style.display='block';
+  } else {
+    $('auSchoolCodeWrap').style.display='none';
+  }
+  auActiveVal=u.active||'Y';
+  document.querySelectorAll('[data-yn="auActive"] button').forEach(b=>b.classList.toggle('on',b.dataset.v===auActiveVal));
+  showUserForm();
+}
+
+async function toggleUser(email, active){
+  const s=getSession(); if(!s) return;
+  const url=getCfg().url; if(!url){ toast('Backend URL not set.'); return; }
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveUser',token:s.token,user:{email,active:active==='Y'}})});
+    const j=await r.json();
+    if(j.status==='ok'){ toast(active==='Y'?'User activated.':'User deactivated.'); loadUserList(); }
+    else toast(j.message||'Error.');
+  }catch(e){ toast('Could not update user.'); }
+}
+
+$('auSave').onclick=async()=>{
+  const name=$('auName').value.trim(), email=$('auEmail').value.trim(),
+        role=$('auRole').value, pin=$('auPin').value.trim(),
+        schoolCode=$('auSchoolCode').value.trim();
+  if(!name) return toast('Enter name.');
+  if(!email) return toast('Enter email.');
+  if(!role) return toast('Select role.');
+  if(role==='School'&&!$('auPartner').value) return toast('Select a partner.');
+  if(role==='School'&&!$('auSchool').value) return toast('Select a school.');
+  const s=getSession(); if(!s) return;
+  const url=getCfg().url; if(!url){ toast('Backend URL not set.'); return; }
+  $('auSave').disabled=true;
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveUser',token:s.token,
+        user:{name,email,role,schoolCode,pin:pin||undefined,active:auActiveVal==='Y'}})});
+    const j=await r.json();
+    if(j.status==='ok'){
+      toast(j.action==='created'?'User created ✓':'User updated ✓');
+      await loadUserList();
+      showUserList();
+      if(j.pin){ $('auPinCode').textContent=j.pin; $('auPinModal').style.display='flex'; }
+    } else toast(j.message||'Error saving user.');
+  }catch(e){ toast('Could not save user.'); }
+  $('auSave').disabled=false;
+};
+
+/* ============================================================
+   ADMIN: PERMISSIONS GRID
+   ============================================================ */
+const PERM_FEATURES=[
+  {key:'form1',label:'Form 1'},{key:'form2',label:'Form 2'},
+  {key:'form3',label:'Form 3'},{key:'form4',label:'Form 4'},
+  {key:'iifDash',label:'IIF Dash'},{key:'tracker',label:'Tracker'},
+  {key:'editSubmit',label:'Edit'},{key:'adminPanel',label:'Admin'},
+  {key:'buddy',label:'Buddy'}
+];
+const PERM_ROLES=['IIF','School'];
+let permState={
+  IIF:{form1:true,form2:true,form3:true,form4:true,iifDash:true,tracker:true,editSubmit:true,adminPanel:false,buddy:true},
+  School:{form1:false,form2:false,form3:false,form4:false,iifDash:false,tracker:false,editSubmit:false,adminPanel:false,buddy:false}
+};
+
+function renderPermGrid(){
+  const tbody=$('permBody'); tbody.innerHTML='';
+  PERM_ROLES.forEach(role=>{
+    const tr=document.createElement('tr');
+    let html=`<td>${role}</td>`;
+    PERM_FEATURES.forEach(f=>{
+      const checked=permState[role]&&permState[role][f.key];
+      // Admin panel locked for non-Admin roles
+      const locked=(f.key==='adminPanel');
+      html+=`<td><div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" data-role="${role}" data-key="${f.key}" ${checked?'checked':''} ${locked?'disabled':''}>
+          <span class="toggle-slider"></span>
+        </label></div></td>`;
+    });
+    tr.innerHTML=html;
+    tbody.appendChild(tr);
+  });
+  // Admin row — all locked on
+  const adminTr=document.createElement('tr');
+  let adminHtml='<td>Admin</td>';
+  PERM_FEATURES.forEach(()=>{ adminHtml+='<td><div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked disabled><span class="toggle-slider"></span></label></div></td>'; });
+  adminTr.innerHTML=adminHtml;
+  tbody.appendChild(adminTr);
+
+  // Wire toggles
+  tbody.querySelectorAll('input[type=checkbox][data-role]').forEach(cb=>{
+    cb.onchange=()=>{ permState[cb.dataset.role][cb.dataset.key]=cb.checked; };
+  });
+}
+
+$('savePermsBtn').onclick = async () => {
+  const s=getSession(); if(!s) return;
+  const url=getCfg().url; if(!url){ toast('Backend URL not set.'); return; }
+  $('savePermsBtn').disabled=true;
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'savePermissions',token:s.token,permissions:permState})});
+    const j=await r.json();
+    toast(j.status==='ok'?'Permissions saved ✓':j.message||'Error.');
+  }catch(e){ toast('Could not save permissions.'); }
+  $('savePermsBtn').disabled=false;
+};
 
 /* ---------- Form 2: student data ---------- */
 function refreshF2Schools(){
@@ -1009,13 +1982,503 @@ $('submit4Btn').onclick = async () => {
   } else { queue(payload); toast('Saved offline — will sync when online.'); }
 };
 
+/* ============================================================
+   INQUI BUDDY — Innovation Evaluator
+   ============================================================ */
+
+const buddyState = {
+  partner:'', school:'', schoolCode:'',
+  slName:'', clusterId:'', grade:'', section:'',
+  teamId:'', teamStudents:[],
+  teamData:null,   // array of SL objects from getTeamData
+  feedback:'', imageUrl:''
+};
+
+// Escape HTML for safe insertion into innerHTML
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function loadBuddyScreen(){
+  Object.assign(buddyState,{partner:'',school:'',schoolCode:'',slName:'',clusterId:'',grade:'',section:'',teamId:'',teamStudents:[],teamData:null,feedback:'',imageUrl:''});
+  const s=getSession();
+  if(s&&s.role==='School'&&s.schoolCode){
+    const match=SCHOOLS.find(sc=>sc.code===s.schoolCode);
+    if(match){
+      buddyState.partner=match.partner; buddyState.school=match.name; buddyState.schoolCode=match.code;
+      showScreen('buddyOverviewScreen');
+      return;
+    }
+  }
+  // IIF / Admin: show step 1 with all partner chips
+  ['buddy-step1','buddy-step2','buddy-step3','buddy-step4'].forEach((id,i)=>{ const el=$(id); if(el) el.style.display=i===0?'block':'none'; });
+  const partners=[...new Set(SCHOOLS.map(sc=>sc.partner).filter(Boolean))].sort();
+  $('buddyPartnerChips').innerHTML = partners.length
+    ? partners.map(p=>`<div class="chip" onclick="selectBuddyPartner('${escHtml(p)}')">${escHtml(p)}</div>`).join('')
+    : '<p style="color:var(--muted);font-size:14px;margin:0">No partners loaded — check backend connection.</p>';
+}
+
+function selectBuddyPartner(p){
+  buddyState.partner=p;
+  $('buddyPartnerChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.textContent===p));
+  const list=SCHOOLS.filter(s=>s.partner===p);
+  $('buddySchool').innerHTML='<option value="">Select school…</option>'+list.map(s=>`<option value="${escHtml(s.name)}" data-code="${escHtml(s.code)}">${escHtml(s.name)}</option>`).join('');
+  $('buddySchoolCode').value=''; $('buddyStep2Btn').disabled=true;
+  $('buddySelectedPartner').textContent='Partner: '+p;
+  $('buddy-step1').style.display='none'; $('buddy-step2').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function buddyOnSchoolChange(){
+  const opt=$('buddySchool').selectedOptions[0];
+  if(!opt||!opt.value){ $('buddySchoolCode').value=''; $('buddyStep2Btn').disabled=true; return; }
+  buddyState.school=opt.value; buddyState.schoolCode=opt.dataset.code||'';
+  $('buddySchoolCode').value=buddyState.schoolCode; $('buddyStep2Btn').disabled=false;
+}
+
+async function goToBuddyStep3(){
+  $('buddy-step2').style.display='none'; $('buddy-step3').style.display='block';
+  $('buddyLoadingTeams').style.display='block'; $('buddySLWrap').style.display='none'; $('buddyNoTeamsWrap').style.display='none';
+  window.scrollTo(0,0);
+  const s=getSession(), url=getCfg().url;
+  try{
+    const r=await fetch(url+'?action=getTeamData&schoolCode='+encodeURIComponent(buddyState.schoolCode)+'&token='+encodeURIComponent(s.token));
+    const j=await r.json();
+    $('buddyLoadingTeams').style.display='none';
+    if(j.status==='ok'&&j.sls&&j.sls.length){
+      buddyState.teamData=j.sls; renderBuddySLDropdown(j.sls); $('buddySLWrap').style.display='block';
+    } else { $('buddyNoTeamsWrap').style.display='block'; }
+  }catch(e){ $('buddyLoadingTeams').style.display='none'; $('buddyNoTeamsWrap').style.display='block'; }
+}
+
+function renderBuddySLDropdown(sls){
+  $('buddySL').innerHTML='<option value="">Select SL…</option>'+sls.map((sl,i)=>`<option value="${i}">${escHtml(sl.slName)} — Cluster ${escHtml(String(sl.clusterId))} (Gr ${escHtml(sl.grade)} ${escHtml(sl.section)})</option>`).join('');
+  $('buddyClusterId').value=''; $('buddyGradeSec').value=''; $('buddyStep3Btn').disabled=true;
+}
+
+function buddyOnSLChange(){
+  const idx=$('buddySL').value;
+  if(idx===''){ $('buddyClusterId').value=''; $('buddyGradeSec').value=''; $('buddyStep3Btn').disabled=true; return; }
+  const sl=buddyState.teamData[Number(idx)];
+  buddyState.slName=sl.slName; buddyState.clusterId=sl.clusterId; buddyState.grade=sl.grade; buddyState.section=sl.section;
+  $('buddyClusterId').value=sl.clusterId; $('buddyGradeSec').value='Gr '+sl.grade+' '+sl.section; $('buddyStep3Btn').disabled=false;
+}
+
+let buddyCurrentTeams=[];
+function goToBuddyStep4(){
+  const idx=Number($('buddySL').value);
+  const sl=buddyState.teamData[idx];
+  buddyCurrentTeams=sl.teams||[];
+  $('buddy-step3').style.display='none'; $('buddy-step4').style.display='block';
+  $('buddyClusterLabel').textContent='SL: '+sl.slName+' | Cluster '+sl.clusterId+' | Grade '+sl.grade+', Section '+sl.section;
+  if(buddyCurrentTeams.length){
+    $('buddyTeamList').innerHTML=buddyCurrentTeams.map((t,i)=>`
+      <div class="chip buddy-team-card" data-tidx="${i}" onclick="selectBuddyTeam(${i})">
+        <div style="font-weight:700;font-size:15px">Team ${escHtml(String(t.teamId))}</div>
+        <div class="buddy-sub">${t.students.length} student${t.students.length!==1?'s':''}</div>
+        <div class="buddy-sub">${t.students.slice(0,3).map(escHtml).join(', ')}${t.students.length>3?' …':''}</div>
+      </div>`).join('');
+  } else {
+    $('buddyTeamList').innerHTML='<p style="color:var(--muted);font-size:14px">No teams found for this SL.</p>';
+  }
+  $('buddyStep4Btn').style.display='none'; window.scrollTo(0,0);
+}
+
+function selectBuddyTeam(idx){
+  $('buddyTeamList').querySelectorAll('.buddy-team-card').forEach(c=>c.classList.remove('on'));
+  const card=$('buddyTeamList').querySelector(`[data-tidx="${idx}"]`);
+  if(card) card.classList.add('on');
+  const t=buddyCurrentTeams[idx];
+  buddyState.teamId=t.teamId; buddyState.teamStudents=t.students||[];
+  $('buddyStep4Btn').style.display='block';
+}
+
+function buddyBack(toStep){
+  ['buddy-step1','buddy-step2','buddy-step3','buddy-step4'].forEach((id,i)=>{ const el=$(id); if(el) el.style.display=i===(toStep-1)?'block':'none'; });
+  window.scrollTo(0,0);
+}
+
+async function extractBuddyTeamData(){
+  $('buddyExtractBtn').disabled=true;
+  $('buddyExtractStatus').textContent='Extracting... this may take 20-30 seconds.';
+  $('buddyExtractStatus').style.color='var(--muted)';
+  const s=getSession(), url=getCfg().url;
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'extractTeamData',schoolCode:buddyState.schoolCode,token:s.token})});
+    const j=await r.json();
+    if(j.status==='ok' && j.teamsExtracted > 0){
+      $('buddyExtractStatus').textContent='Extracted '+j.teamsExtracted+' team(s). Loading…';
+      $('buddyExtractStatus').style.color='var(--ok)';
+      await goToBuddyStep3();
+    } else if(j.status==='ok' && j.teamsExtracted === 0){
+      const errDetail = j.errors && j.errors.length ? j.errors[0] : 'Photos found: '+(j.photosFound||0)+'. No teams extracted.';
+      $('buddyExtractStatus').innerHTML='<b>Extracted 0 teams.</b><br><span style="font-size:12px;color:var(--muted)">'+escHtml(errDetail)+'</span>';
+      $('buddyExtractStatus').style.color='var(--err)';
+      $('buddyExtractBtn').disabled=false;
+    } else {
+      $('buddyExtractStatus').textContent='Error: '+(j.message||'Extraction failed.');
+      $('buddyExtractStatus').style.color='var(--err)';
+      $('buddyExtractBtn').disabled=false;
+    }
+  }catch(e){ $('buddyExtractStatus').textContent='Could not reach server.'; $('buddyExtractStatus').style.color='var(--err)'; $('buddyExtractBtn').disabled=false; }
+}
+
+function showBuddyEvalScreen(){
+  $('buddyTeamCard').innerHTML=`
+    <div class="sec-title"><span class="tag">Team</span> Selected Team Details</div>
+    <table class="dash-table" style="margin-top:8px">
+      <tr><td><b>School</b></td><td>${escHtml(buddyState.school)}</td></tr>
+      <tr><td><b>Partner</b></td><td>${escHtml(buddyState.partner)}</td></tr>
+      <tr><td><b>Grade &amp; Section</b></td><td>Grade ${escHtml(buddyState.grade)}, Section ${escHtml(buddyState.section)}</td></tr>
+      <tr><td><b>Student Leader</b></td><td>${escHtml(buddyState.slName)}</td></tr>
+      <tr><td><b>Cluster ID</b></td><td>${escHtml(String(buddyState.clusterId))}</td></tr>
+      <tr><td><b>Team ID</b></td><td>${escHtml(String(buddyState.teamId))}</td></tr>
+      <tr><td><b>Students</b></td><td>${buddyState.teamStudents.map(escHtml).join(', ')||'—'}</td></tr>
+    </table>`;
+  $('buddyPhoto').value=''; $('buddyPreview').style.display='none';
+  $('buddyAudio').value=''; $('buddyAudioName').style.display='none';
+  $('buddyEvalBtn').disabled=true; $('buddyLoading').style.display='none'; $('buddyResults').style.display='none';
+  buddyState.feedback=''; buddyState.imageUrl='';
+  showScreen('buddyEvalScreen');
+}
+
+function buddyPhotoChanged(){
+  const f=$('buddyPhoto').files[0];
+  if(!f){ $('buddyPreview').style.display='none'; $('buddyEvalBtn').disabled=true; return; }
+  const reader=new FileReader();
+  reader.onload=e=>{ $('buddyPreview').src=e.target.result; $('buddyPreview').style.display='block'; $('buddyEvalBtn').disabled=false; };
+  reader.readAsDataURL(f);
+}
+
+function buddyAudioChanged(){
+  const f=$('buddyAudio').files[0];
+  $('buddyAudioName').style.display=f?'block':'none';
+  if(f) $('buddyAudioName').textContent='Audio: '+f.name;
+}
+
+async function runBuddyEval(){
+  const photoData=await readPhoto('buddyPhoto');
+  if(!photoData){ toast('Upload an image first.'); return; }
+  const audioData=await readAudio('buddyAudio');
+  $('buddyEvalBtn').disabled=true; $('buddyLoading').style.display='block'; $('buddyResults').style.display='none';
+  $('buddyLoadingMsg').textContent='Generating feedback for the innovation idea… (this takes ~30 seconds)';
+  const s=getSession(), url=getCfg().url;
+  try{
+    const ctrl=new AbortController();
+    const tmr=setTimeout(()=>ctrl.abort(),120000);
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},signal:ctrl.signal,
+      body:JSON.stringify({
+        action:'processInnovation', token:s.token,
+        schoolCode:buddyState.schoolCode, school:buddyState.school, partner:buddyState.partner,
+        grade:buddyState.grade, section:buddyState.section,
+        slName:buddyState.slName, clusterId:buddyState.clusterId, teamId:buddyState.teamId,
+        students:buddyState.teamStudents, image:photoData,
+        audio:audioData||null,
+        evaluatedBy:s.name||''
+      })});
+    clearTimeout(tmr);
+    const j=await r.json();
+    $('buddyLoading').style.display='none';
+    if(j.status==='ok'){
+      buddyState.feedback=j.feedback; buddyState.imageUrl=j.imageUrl||'';
+      renderBuddyFeedback(j.feedback);
+      $('buddyResults').style.display='block';
+      const ss=getSession(); $('buddyBackToOverview').style.display=(ss&&ss.role==='School')?'block':'none';
+      window.scrollTo(0,$('buddyResults').offsetTop);
+    } else { toast('Error: '+(j.message||'Processing failed.')); $('buddyEvalBtn').disabled=false; }
+  }catch(e){ $('buddyLoading').style.display='none'; toast('Could not reach server. Check connection.'); $('buddyEvalBtn').disabled=false; }
+}
+
+function renderBuddyFeedback(text){
+  $('buddyFeedbackText').textContent=text;
+}
+
+async function downloadBuddyPDF(){
+  if(!buddyState.feedback){ toast('No evaluation results to download.'); return; }
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const ml=18, mr=18, mt=22, cw=210-ml-mr;
+  let y=mt;
+
+  function newPage(){ doc.addPage(); y=mt; }
+  function maybeNewPage(needed){ if(y+needed>277){ newPage(); } }
+
+  // Page 1 — Header band
+  doc.setFillColor(13,59,74);
+  doc.rect(0,0,210,28,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+  doc.text('Think And Make 2026-27 — Evaluation Report',ml,12);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(0,191,255);
+  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,21);
+
+  y=36;
+  // Team details section
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
+  doc.text('Team Details',ml,y); y+=5;
+  doc.setDrawColor(0,191,255); doc.line(ml,y,210-mr,y); y+=5;
+
+  const details=[
+    ['School',buddyState.school],['Partner',buddyState.partner],
+    ['Grade & Section','Grade '+buddyState.grade+', Section '+buddyState.section],
+    ['Student Leader (SL)',buddyState.slName],['Cluster ID',String(buddyState.clusterId)],
+    ['Team ID',String(buddyState.teamId)],
+    ['Students',buddyState.teamStudents.join(', ')||'—'],
+    ['Evaluated On',new Date().toLocaleDateString('en-IN')]
+  ];
+  doc.setFontSize(9.5);
+  details.forEach(([lbl,val])=>{
+    maybeNewPage(10);
+    doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51);
+    const vLines=doc.splitTextToSize(val,130); doc.text(vLines,68,y);
+    y+=Math.max(vLines.length*5.5,7);
+  });
+
+  y+=4; maybeNewPage(30);
+  // Innovation idea image
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
+  doc.text('Innovation Idea Submission',ml,y); y+=5;
+  doc.setDrawColor(0,191,255); doc.line(ml,y,210-mr,y); y+=5;
+  const imgEl=$('buddyPreview');
+  if(imgEl&&imgEl.src&&imgEl.src.startsWith('data:')){
+    try{
+      const availH=Math.min(110,277-y-10);
+      doc.addImage(imgEl.src,'JPEG',ml,y,cw,availH,'','FAST');
+      y+=availH+6;
+    }catch(e){}
+  }
+
+  // Feedback
+  newPage();
+  doc.setFillColor(13,59,74); doc.rect(0,0,210,22,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.text('Mentor Feedback',ml,14);
+  y=30;
+  if(buddyState.feedback){
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(51,51,51);
+    const fbLines=doc.splitTextToSize(buddyState.feedback,cw);
+    fbLines.forEach(line=>{ maybeNewPage(6); doc.text(line,ml,y); y+=5.5; });
+  }
+
+  // Footer on every page
+  const totalPages=doc.getNumberOfPages();
+  for(let i=1;i<=totalPages;i++){
+    doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
+    doc.text('Page '+i+' of '+totalPages+'   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,289);
+  }
+
+  const fname='InquiBuddy_'+escHtml(buddyState.schoolCode)+'_Team'+escHtml(String(buddyState.teamId))+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+  doc.save(fname);
+}
+
+/* ============================================================
+   INQUI BUDDY — Overview Screen
+   ============================================================ */
+
+let buddyOverviewData = [];
+
+async function loadBuddyOverview(){
+  $('boSchoolName').textContent = buddyState.school || 'Teams Overview';
+  $('boContent').innerHTML = '<p style="text-align:center;color:var(--muted);padding:40px 0"><span class="buddy-spinner" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>Loading teams…</p>';
+  $('boStats').innerHTML = '';
+  $('boDownloadBtn').style.display = 'none';
+  const s = getSession(), url = getCfg().url;
+  try{
+    const r = await fetch(url+'?action=getSchoolSummary&schoolCode='+encodeURIComponent(buddyState.schoolCode)+'&token='+encodeURIComponent(s.token));
+    const j = await r.json();
+    if(j.status==='ok'){
+      buddyOverviewData = j.teams || [];
+      renderBuddyOverview(buddyOverviewData);
+    } else {
+      $('boContent').innerHTML = '<p style="color:var(--err);padding:20px">'+escHtml(j.message||'Error loading teams')+'</p>';
+    }
+  }catch(e){
+    $('boContent').innerHTML = '<p style="color:var(--err);padding:20px">Could not reach server. Check connection.</p>';
+  }
+}
+
+function renderBuddyOverview(teams){
+  const total = teams.length;
+  const evaluated = teams.filter(t=>t.evaluated).length;
+  const pending = total - evaluated;
+
+  $('boStats').innerHTML = `
+    <div style="background:#eaf7f0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:#27ae60">${evaluated} Evaluated</div>
+    <div style="background:#fff8e7;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:#B26A00">${pending} Pending</div>
+    <div style="background:#f0f4f8;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--navy)">${total} Total</div>`;
+
+  if(total === 0){
+    $('boContent').innerHTML = `<div class="card">
+      <div class="preview warn" style="margin-bottom:14px">No team data found for this school.</div>
+      <p style="font-size:13px;color:var(--muted)">Team data is extracted from the Form 2 student database photo. Use the Inqui Buddy wizard to extract it first.</p>
+      <button class="buddy-btn buddy-btn-primary" onclick="showScreen('buddyScreen')">Go to Inqui Buddy Wizard &#8594;</button>
+    </div>`;
+    return;
+  }
+
+  $('boDownloadBtn').style.display = 'block';
+
+  // Group by SL
+  const slGroups = {};
+  const slOrder = [];
+  teams.forEach((t, idx)=>{
+    const key = t.slName+'|||'+t.clusterId+'|||'+t.grade+'|||'+t.section;
+    if(!slGroups[key]){ slGroups[key]={slName:t.slName,clusterId:t.clusterId,grade:t.grade,section:t.section,entries:[]}; slOrder.push(key); }
+    slGroups[key].entries.push({t, idx});
+  });
+
+  let html = '';
+  slOrder.forEach(key=>{
+    const g = slGroups[key];
+    html += `<div class="card">
+      <div class="sec-title" style="font-size:14px;margin-bottom:12px">
+        <span class="tag">SL</span> ${escHtml(g.slName)}
+        <span style="font-weight:400;font-size:12px;color:var(--muted)"> &nbsp;Cluster ${escHtml(String(g.clusterId))} &middot; Gr ${escHtml(g.grade)} ${escHtml(g.section)}</span>
+      </div>`;
+    g.entries.forEach(({t, idx})=>{
+      const studentSnippet = t.students.slice(0,3).map(escHtml).join(', ')+(t.students.length>3?' +' +(t.students.length-3)+' more':'');
+      if(t.evaluated){
+        html += `<div style="border:1px solid #c6f0d8;background:#f0fbf5;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--navy)">Team ${escHtml(String(t.teamId))}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${escHtml(studentSnippet)}</div>
+          </div>
+          <div style="background:#27ae60;color:#fff;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;white-space:nowrap">&#10003; Evaluated</div>
+        </div>`;
+      } else {
+        html += `<div style="border:1px solid #ffe0a0;background:#fff8e7;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--navy)">Team ${escHtml(String(t.teamId))}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${escHtml(studentSnippet)}</div>
+          </div>
+          <button class="buddy-btn buddy-btn-primary" style="margin:0;padding:8px 14px;font-size:13px" onclick="evaluateTeamFromOverview(${idx})">Evaluate &#8594;</button>
+        </div>`;
+      }
+    });
+    html += '</div>';
+  });
+  $('boContent').innerHTML = html;
+}
+
+function evaluateTeamFromOverview(idx){
+  const t = buddyOverviewData[idx];
+  if(!t) return;
+  buddyState.slName = t.slName;
+  buddyState.clusterId = t.clusterId;
+  buddyState.grade = t.grade;
+  buddyState.section = t.section;
+  buddyState.teamId = t.teamId;
+  buddyState.teamStudents = t.students || [];
+  buddyState.feedback = '';
+  buddyState.imageUrl = '';
+  showBuddyEvalScreen();
+}
+
+async function downloadAllTeamsPDF(){
+  if(!buddyOverviewData.length){ toast('No team data to export.'); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const ml=18, mr=18, cw=210-ml-mr;
+  let y = 22;
+
+  function newPage(){ doc.addPage(); y=22; }
+  function maybeNewPage(needed){ if(y+needed>277){ newPage(); } }
+
+  const total = buddyOverviewData.length;
+  const evaluated = buddyOverviewData.filter(t=>t.evaluated).length;
+
+  // Cover page
+  doc.setFillColor(13,59,74); doc.rect(0,0,210,40,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+  doc.text('Think And Make 2026-27',ml,16);
+  doc.setFontSize(12); doc.text('Innovation Evaluator — All Teams Report',ml,27);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,191,255);
+  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,36);
+
+  y=50;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
+  doc.text('School: '+buddyState.school,ml,y); y+=9;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(51,51,51);
+  [['Total Teams', String(total)],['Evaluated', String(evaluated)],['Pending', String(total-evaluated)],['Generated', new Date().toLocaleDateString('en-IN')]].forEach(([lbl,val])=>{
+    doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51); doc.text(val,ml+50,y); y+=7;
+  });
+
+  // One team per page section
+  buddyOverviewData.forEach(t=>{
+    newPage();
+    // Team header band
+    doc.setFillColor(13,59,74); doc.rect(0,0,210,22,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+    doc.text('Team '+String(t.teamId),ml,14);
+    y=30;
+
+    // Team details
+    const details=[
+      ['Student Leader', t.slName],
+      ['Cluster ID', String(t.clusterId)],
+      ['Grade & Section', 'Grade '+t.grade+', Section '+t.section],
+      ['Students', (t.students||[]).join(', ')||'—']
+    ];
+    doc.setFontSize(9.5);
+    details.forEach(([lbl,val])=>{
+      maybeNewPage(10);
+      doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51);
+      const vLines=doc.splitTextToSize(val,120); doc.text(vLines,70,y);
+      y+=Math.max(vLines.length*5.5,7);
+    });
+
+    y+=6;
+
+    if(!t.evaluated){
+      // Placeholder box
+      maybeNewPage(30);
+      doc.setFillColor(255,243,220); doc.rect(ml,y-4,cw,26,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(178,106,0);
+      doc.text('Yet to upload their idea',ml+cw/2,y+7,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(178,106,0);
+      doc.text('This team has not yet submitted their innovation idea for evaluation.',ml+cw/2,y+17,{align:'center'});
+      y+=30;
+    } else {
+      // Feedback
+      if(t.feedback){
+        maybeNewPage(20);
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(13,59,74);
+        doc.text('Mentor Feedback',ml,y); y+=5;
+        doc.setDrawColor(0,191,255); doc.line(ml,y,210-mr,y); y+=6;
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(51,51,51);
+        const fbLines=doc.splitTextToSize(t.feedback,cw);
+        fbLines.forEach(line=>{ maybeNewPage(6); doc.text(line,ml,y); y+=5.5; });
+      }
+
+      // Evaluated date
+      if(t.evaluatedAt){
+        y+=4;
+        doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(170,170,170);
+        doc.text('Evaluated on: '+new Date(t.evaluatedAt).toLocaleDateString('en-IN'),ml,y);
+      }
+    }
+  });
+
+  // Footer on every page
+  const totalPages=doc.getNumberOfPages();
+  for(let i=1;i<=totalPages;i++){
+    doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
+    doc.text('Page '+i+' of '+totalPages+'   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,289);
+  }
+
+  const fname='InquiBuddy_AllTeams_'+escHtml(buddyState.schoolCode)+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+  doc.save(fname);
+}
+
 /* ---------- boot ---------- */
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
-renderMenu(); showScreen('home');
-restoreDraft(); updateQueueBanner(); netStatus(); updateBar();
-loadSchools().then(()=>{ refreshSchoolOptions(); refreshF2Schools(); });
-/* Settings popup no longer auto-opens: backend URL is built into the app.
-   The gear (⚙) is still available if you ever need to override it. */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+const _sess = getSession();
+if(_sess && _sess.token){
+  bootAfterLogin();
+} else {
+  showAuthScreen();
+}
 </script>
 </body>
 </html>
