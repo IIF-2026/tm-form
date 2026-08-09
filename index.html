@@ -485,6 +485,10 @@
     <select id="f4school"><option value="">Select partner first…</option></select>
     <label>School Code</label>
     <input id="f4code" placeholder="auto-filled" readonly style="background:var(--pastel)" />
+    <div id="f4tracker" style="display:none;margin-top:14px;padding:12px 14px;background:#F0F9FF;border-radius:10px;border:1px solid #BAE6FD">
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--navy)">Grade-sections submitted so far</div>
+      <div id="f4trackerBody"></div>
+    </div>
     <div class="row2">
       <div><label>Grade / Class <span class="req">*</span></label>
         <div id="f4gradeChips" class="chips"></div></div>
@@ -492,8 +496,8 @@
         <input id="f4section" placeholder="e.g. A" /></div>
     </div>
     <div id="f4gradeblock" style="display:none;margin-top:14px;padding:14px;background:#FFF3CD;border-radius:10px;border:1px solid #FFD700">
-      <b style="color:#856404">&#9888; Already submitted for this grade.</b>
-      <p style="margin:6px 0 0;font-size:13px;color:#856404">SL Selection Assessment has already been submitted for this school and grade. Contact admin to make any changes.</p>
+      <b style="color:#856404">&#9888; Already submitted for this grade &amp; section.</b>
+      <p style="margin:6px 0 0;font-size:13px;color:#856404">SL Selection Assessment has already been submitted for this grade and section at this school. Contact admin to make any changes.</p>
     </div>
     <div id="f4teacherSection">
       <label>Teacher name <span class="req">*</span></label>
@@ -1702,8 +1706,9 @@ function showSchoolMenu(){
     let status, action, actionLabel, cardStyle;
     if(submitted){
       status='<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:#DCFCE7;color:#15803D;vertical-align:middle;margin-left:8px">&#10003; Submitted</span>';
-      action= f.key==='form3' ? `openSchoolForm('${f.key}')` : `showSchoolFormDetail('${f.key}')`;
-      actionLabel= f.key==='form3' ? 'Add Entries &rsaquo;' : 'View &rsaquo;';
+      const isMultiEntry = f.key==='form3' || f.key==='form4';
+      action= isMultiEntry ? `openSchoolForm('${f.key}')` : `showSchoolFormDetail('${f.key}')`;
+      actionLabel= isMultiEntry ? 'Add Entries &rsaquo;' : 'View &rsaquo;';
       cardStyle=btnSubmitted;
     } else {
       status='<span style="font-size:12px;font-weight:400;color:var(--muted);vertical-align:middle;margin-left:8px">Not yet submitted</span>';
@@ -2646,6 +2651,7 @@ $('f4school').addEventListener('change', async ()=>{
     f4SchoolData=(j1&&j1.data)?j1.data:{};
     window._f4Submissions=(j2&&j2.status==='ok')?(j2.submissions||[]):[];
   } catch(e){ f4SchoolData={}; window._f4Submissions=[]; toast('Could not load school data. Try again.'); }
+  f4BuildTracker();
   renderF4Grades();
 });
 
@@ -2690,16 +2696,82 @@ function renderF4Teachers(){
   });
 }
 
+function f4BuildTracker(){
+  const subs=window._f4Submissions||[];
+  const tracker=$('f4tracker'), body=$('f4trackerBody');
+  if(!tracker||!body) return;
+  if(!subs.length){ tracker.style.display='none'; return; }
+  const groups={};
+  subs.forEach(r=>{
+    const key=(r['Grade']||'?')+'_'+(r['Section']||'?');
+    if(!groups[key]) groups[key]={grade:r['Grade'],section:r['Section'],names:[]};
+    if(r['SL Name']) groups[key].names.push(r['SL Name']);
+  });
+  let html='';
+  Object.values(groups).forEach(g=>{
+    html+=`<div style="margin-bottom:8px">
+      <div style="font-weight:700;color:var(--navy);font-size:13px">Grade ${escHtml(g.grade||'—')} — Section ${escHtml(g.section||'—')}
+        <span style="font-size:11px;font-weight:400;color:var(--ok);margin-left:6px">&#10003; Submitted</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">SLs: ${escHtml(g.names.join(', ')||'—')}</div>
+    </div>`;
+  });
+  body.innerHTML=html;
+  tracker.style.display='block';
+}
+
+async function f4ResetForNextEntry(){
+  $('f4gradeChips').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  f4SelectedGrade=''; f4SelectedTeacher='';
+  $('f4section').value='';
+  $('f4teacherChips').innerHTML='';
+  $('f4teacherCustom').value=''; $('f4teacherCustom').disabled=false; $('f4teacherCustom').style.opacity='';
+  slState.length=0; slState.push(blankSL());
+  state.yn.f4ack='';
+  document.querySelectorAll('[data-yn="f4ack"] button').forEach(b=>b.classList.remove('on'));
+  $('f4gradeblock').style.display='none';
+  $('f4sectionWrap').style.display='none';
+  $('f4teacherSection').style.display='none';
+  $('slBlocks').style.display='none';
+  $('addSlBtn').style.display='none';
+  $('f4ackCard').style.display='none';
+  $('footer4').style.display='none';
+  const sess4=getSession(); const scriptUrl=getCfg().url;
+  const code=$('f4code').value;
+  if(sess4&&scriptUrl&&code){
+    try{
+      const r=await fetch(scriptUrl+'?action=allForm4Submissions&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(sess4.token));
+      const j=await r.json();
+      window._f4Submissions=(j&&j.status==='ok')?(j.submissions||[]):[];
+    }catch(e){}
+  }
+  f4BuildTracker();
+}
+
 function f4ApplyGradeCheck(){
+  $('f4section').value='';
+  $('f4sectionWrap').style.display='';
+  $('f4gradeblock').style.display='none';
+  $('f4teacherSection').style.display='none';
+  $('slBlocks').style.display='none';
+  $('addSlBtn').style.display='none';
+  $('f4ackCard').style.display='none';
+  $('footer4').style.display='none';
+  $('submit4Btn').disabled=true;
+  $('submit4Btn').style.opacity='0.45';
+}
+
+function f4ApplySectionCheck(){
+  const section=$('f4section').value.trim().toUpperCase();
+  if(!section) return;
   const schoolCode=$('f4code').value.trim().toUpperCase();
   const grade=f4SelectedGrade;
   const isDup=(window._f4Submissions||[]).some(s=>
     String(s['School Code']||'').trim().toUpperCase()===schoolCode &&
-    String(s['Grade']||'').trim()===grade
+    String(s['Grade']||'').trim()===grade &&
+    String(s['Section']||'').trim().toUpperCase()===section
   );
   $('f4gradeblock').style.display=isDup?'block':'none';
   const show=isDup?'none':'';
-  $('f4sectionWrap').style.display=show;
   $('f4teacherSection').style.display=show;
   $('slBlocks').style.display=show;
   $('addSlBtn').style.display=show;
@@ -2714,6 +2786,11 @@ $('f4teacherCustom').addEventListener('input',()=>{
     $('f4teacherChips').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
     f4SelectedTeacher='';
   }
+});
+
+$('f4section').addEventListener('input',()=>{
+  $('f4section').value=$('f4section').value.toUpperCase();
+  f4ApplySectionCheck();
 });
 
 const F4_CRITERIA = [
@@ -2817,13 +2894,15 @@ $('submit4Btn').onclick = async () => {
   $('submit4Btn').disabled=false; $('submit4Btn').textContent='Submit';
   if(ok){
     const sess4=getSession();
-    const backBtn4=(sess4&&sess4.role==='School')
-      ?`<button class="copybtn" onclick="sdData=null;showScreen('schoolDash')">&#8592; Back to Dashboard</button>`
-      :`<button class="copybtn" onclick="location.reload()">Fill another</button>`;
-    $('app4').innerHTML='<div class="done"><div class="big">✅</div><h2>Submitted</h2>'
-      +'<p>'+payload.sls.length+' SL record(s) saved.</p><span class="idpill">'+payload.submissionId+'</span>'
-      +'<br><br>'+backBtn4+'</div>';
-    $('footer4').style.display='none';
+    if(sess4&&sess4.role==='School'){
+      toast('✅ '+payload.sls.length+' SL record(s) saved. Select another grade to add more entries.');
+      await f4ResetForNextEntry();
+    } else {
+      $('app4').innerHTML='<div class="done"><div class="big">✅</div><h2>Submitted</h2>'
+        +'<p>'+payload.sls.length+' SL record(s) saved.</p><span class="idpill">'+payload.submissionId+'</span>'
+        +'<br><br><button class="copybtn" onclick="location.reload()">Fill another</button></div>';
+      $('footer4').style.display='none';
+    }
   } else { queue(payload); toast('Saved offline — will sync when online.'); }
 };
 
