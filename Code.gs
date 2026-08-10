@@ -528,21 +528,34 @@ function uploadPhotos(payload, ss, partner, partnerSS) {
     var sc3  = ((payload.header||{}).schoolCode||'SCH').replace(/[^a-zA-Z0-9]/g,'');
     var gr3  = ((payload.header||{}).grade||'').replace(/[^a-zA-Z0-9]/g,'');
     var sec3 = ((payload.header||{}).section||'').toUpperCase().replace(/[^a-zA-Z0-9]/g,'');
-    var u1 = upload(payload.photo, sc3+'_'+gr3+sec3+'_TeamsInfo.jpg');
-    if (u1) {
-      updatePhotoUrl(targetSS, FORM_SCHEMAS[payload.formId], payload.submissionId, 'Teams Info Photo', u1);
-      var photoBase64 = payload.photo ? (payload.photo.data || payload.photo) : null;
-      if (photoBase64) {
-        var partnerFolderId3 = null;
-        if (partner) {
-          try {
-            var pCfg3 = getPartnerConfig(ss);
-            var pEntry3 = pCfg3[partner];
-            if (pEntry3 && pEntry3.folderId) partnerFolderId3 = pEntry3.folderId;
-          } catch(e) {}
-        }
-        extractStudentDataFromPhoto(photoBase64, u1, payload, targetSS, partner, partnerFolderId3);
+    // Support new multi-file `photos` array and legacy single `photo`
+    var photosArr3 = payload.photos || (payload.photo ? [payload.photo] : []);
+    var partnerFolderId3 = null;
+    if (partner) {
+      try {
+        var pCfg3 = getPartnerConfig(ss);
+        var pEntry3 = pCfg3[partner];
+        if (pEntry3 && pEntry3.folderId) partnerFolderId3 = pEntry3.folderId;
+      } catch(e) {}
+    }
+    var uploadedUrls3 = [];
+    photosArr3.forEach(function(fileObj, idx) {
+      var origName = fileObj.name || ('file_' + (idx+1));
+      var ext = origName.split('.').pop().toLowerCase() || 'jpg';
+      var fname = sc3+'_'+gr3+sec3+'_TeamsInfo_'+(idx+1)+'.'+ext;
+      var fileUrl = upload(fileObj, fname);
+      if (fileUrl) uploadedUrls3.push(fileUrl);
+      var mime3 = (fileObj.mime || '').toLowerCase();
+      if (mime3 === 'text/csv' || origName.match(/\.csv$/i)) {
+        extractStudentDataFromCSV(fileObj, fileUrl||'', payload, targetSS, partner, partnerFolderId3);
+      } else if (mime3.indexOf('spreadsheet') !== -1 || origName.match(/\.xlsx?$/i)) {
+        extractStudentDataFromExcel(fileObj, fileUrl||'', payload, targetSS, partner, partnerFolderId3);
+      } else if (fileObj.data) {
+        extractStudentDataFromPhoto(fileObj.data, fileUrl||'', payload, targetSS, partner, partnerFolderId3, fileObj.mime, idx > 0);
       }
+    });
+    if (uploadedUrls3.length > 0) {
+      updatePhotoUrl(targetSS, FORM_SCHEMAS[payload.formId], payload.submissionId, 'Teams Info Photo', uploadedUrls3.join(', '));
     }
   }
   if (payload.formId === 'form5_kits_handover') {
@@ -856,7 +869,7 @@ function getOrCreateSchoolTab(dbSS, schoolCode, schoolName) {
   return sheet;
 }
 
-function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, partnerName, partnerFolderId) {
+function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, partnerName, partnerFolderId, mime, skipClear) {
   var schema = FORM_SCHEMAS['form3_student_data'];
   var submissionId = payload.submissionId || '';
   var h = payload.header || {};
@@ -877,7 +890,7 @@ function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, p
       { role: 'system', content: 'You are an expert at extracting structured data from handwritten Indian school student database sheets.\n\nThe image shows a student database sheet with columns including: School Code, Section, Cluster (number), SL ID (sequential like S1 or 1), SL Name, Team # (sequential like T1/T2/T3), Team Code (alphanumeric like TM26DA6A11), Student Name, Gender (M/F).\n\nExtract ALL SL blocks, their cluster numbers, the teams within each cluster, and all student details.\n\nReturn ONLY valid JSON (no markdown, no explanation) in this exact format:\n[\n  {\n    "sl_id": "SL ID or number (e.g. S1, 1)",\n    "sl_name": "Name of Student Leader",\n    "cluster_id": "Cluster number (e.g. 1, 2, 3)",\n    "grade": "Grade number if visible, else empty string",\n    "section": "Section letter if visible, else empty string",\n    "teams": [\n      {\n        "team_number": "Sequential team ID (e.g. T1, T2)",\n        "team_code": "Alphanumeric Team Code (e.g. TM26DA6A11)",\n        "students": [\n          { "name": "Student Name", "gender": "M or F or empty" }\n        ]\n      }\n    ]\n  }\n]\n\nExtract every SL block visible on the page.' },
       { role: 'user', content: [
         { type: 'text', text: 'Extract all SL, cluster, team, and student data from this student database sheet.' },
-        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + photoBase64 } }
+        { type: 'image_url', image_url: { url: 'data:' + (mime || 'image/jpeg') + ';base64,' + photoBase64 } }
       ]}
     ];
 
@@ -892,8 +905,8 @@ function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, p
       var slId      = String(slBlock.sl_id || '').trim();
       var slName    = String(slBlock.sl_name || '').trim();
       var clusterId = String(slBlock.cluster_id || '').trim();
-      var imgGrade  = String(slBlock.grade || grade).trim();
-      var imgSec    = String(slBlock.section || section).trim().toUpperCase();
+      var imgGrade  = grade;
+      var imgSec    = section;
       (slBlock.teams || []).forEach(function(team) {
         var teamNum  = String(team.team_number || '').trim();
         var teamCode = String(team.team_code || '').trim();
@@ -908,13 +921,15 @@ function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, p
     var dbSS = getOrCreateStudentDbSheet(partnerName, partnerFolderId);
     var schoolTab = getOrCreateSchoolTab(dbSS, schoolCode, schoolName);
 
-    // Remove existing rows for this grade+section
-    var existing = schoolTab.getDataRange().getValues();
-    var toDelete = [];
-    for (var i = existing.length - 1; i >= 1; i--) {
-      if (String(existing[i][2]) === grade && String(existing[i][3]) === section) toDelete.push(i + 1);
+    // Remove existing rows only on the first image of a multi-image batch
+    if (!skipClear) {
+      var existing = schoolTab.getDataRange().getValues();
+      var toDelete = [];
+      for (var i = existing.length - 1; i >= 1; i--) {
+        if (String(existing[i][2]) === grade && String(existing[i][3]) === section) toDelete.push(i + 1);
+      }
+      toDelete.forEach(function(r) { schoolTab.deleteRow(r); });
     }
-    toDelete.forEach(function(r) { schoolTab.deleteRow(r); });
 
     if (rows.length > 0) {
       schoolTab.getRange(schoolTab.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
@@ -922,9 +937,14 @@ function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, p
 
     var tabUrl = 'https://docs.google.com/spreadsheets/d/' + dbSS.getId() + '/edit#gid=' + schoolTab.getSheetId();
     updatePhotoUrl(targetSS, schema, submissionId, 'Student Database', tabUrl);
-    setStatus('Done (' + rows.length + ' students)');
+    var allSheetRows = schoolTab.getDataRange().getValues();
+    var totalWritten = 0;
+    for (var k = 1; k < allSheetRows.length; k++) {
+      if (String(allSheetRows[k][2]) === grade && String(allSheetRows[k][3]) === section) totalWritten++;
+    }
+    setStatus('Done (' + totalWritten + ' students)');
     var enteredTotal = Number(payload.total || 0);
-    var countValidation = (enteredTotal > 0 && enteredTotal === rows.length)
+    var countValidation = (enteredTotal > 0 && enteredTotal === totalWritten)
       ? 'Counts matched'
       : 'Counts mismatch - Needs validation';
     updatePhotoUrl(targetSS, schema, submissionId, 'Count Validation', countValidation);
@@ -934,6 +954,143 @@ function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, p
     setStatus('Error: ' + e.message.substring(0, 120));
     updatePhotoUrl(targetSS, schema, submissionId, 'Count Validation', 'Extraction error - Needs validation');
     return null;
+  }
+}
+
+// -------- STRUCTURED FILE EXTRACTION (Excel / CSV) --------
+
+/**
+ * Shared helper — writes already-mapped student rows to the student DB.
+ * rows: [[schoolCode, schoolName, grade, section, clusterId, slId, slName, teamNum, teamCode, name, gender, timestamp, fileUrl], ...]
+ */
+function writeStudentRows(rows, payload, targetSS, partnerName, partnerFolderId, fileUrl, sourceLabel) {
+  var schema = FORM_SCHEMAS['form3_student_data'];
+  var submissionId = payload.submissionId || '';
+  function setStatus(val) {
+    updatePhotoUrl(targetSS, schema, submissionId, 'Extraction Status', val);
+  }
+  try {
+    var h = payload.header || {};
+    var grade = String(h.grade || '');
+    var section = (h.section || '').toUpperCase();
+    var dbSS = getOrCreateStudentDbSheet(partnerName, partnerFolderId);
+    var schoolCode = (h.schoolCode || '').trim().toUpperCase();
+    var schoolName = h.school || '';
+    var schoolTab = getOrCreateSchoolTab(dbSS, schoolCode, schoolName);
+    // Remove existing rows for this grade+section
+    var existing = schoolTab.getDataRange().getValues();
+    var toDelete = [];
+    for (var i = existing.length - 1; i >= 1; i--) {
+      if (String(existing[i][2]) === grade && String(existing[i][3]) === section) toDelete.push(i + 1);
+    }
+    toDelete.forEach(function(r) { schoolTab.deleteRow(r); });
+    if (rows.length > 0) {
+      schoolTab.getRange(schoolTab.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+    }
+    var tabUrl = 'https://docs.google.com/spreadsheets/d/' + dbSS.getId() + '/edit#gid=' + schoolTab.getSheetId();
+    updatePhotoUrl(targetSS, schema, submissionId, 'Student Database', tabUrl);
+    var allSheetRows = schoolTab.getDataRange().getValues();
+    var totalWritten = 0;
+    for (var k = 1; k < allSheetRows.length; k++) {
+      if (String(allSheetRows[k][2]) === grade && String(allSheetRows[k][3]) === section) totalWritten++;
+    }
+    setStatus('Done (' + totalWritten + ' students, via ' + (sourceLabel||'file') + ')');
+    var enteredTotal = Number(payload.total || 0);
+    var countValidation = (enteredTotal > 0 && enteredTotal === totalWritten)
+      ? 'Counts matched'
+      : 'Counts mismatch - Needs validation';
+    updatePhotoUrl(targetSS, schema, submissionId, 'Count Validation', countValidation);
+    return tabUrl;
+  } catch(e) {
+    Logger.log('writeStudentRows error: ' + e.message);
+    setStatus('Error (' + (sourceLabel||'file') + '): ' + e.message.substring(0, 120));
+    return null;
+  }
+}
+
+/**
+ * Maps a flat 2D array (header row + data rows) to student DB schema rows.
+ * Looks for columns: SL ID/No, SL Name, Cluster, Team #/No, Team Code, Name/Student Name, Gender.
+ */
+function mapRowsToStudentSchema(rawRows, payload, fileUrl) {
+  var h = payload.header || {};
+  var grade = String(h.grade || '');
+  var section = (h.section || '').toUpperCase();
+  var schoolCode = (h.schoolCode || '').trim().toUpperCase();
+  var schoolName = h.school || '';
+  var now = new Date().toISOString();
+
+  // Find header row (first row with recognizable column names)
+  var headerIdx = 0;
+  var colMap = {};
+  for (var ri = 0; ri < Math.min(5, rawRows.length); ri++) {
+    var rowLower = rawRows[ri].map(function(c){ return String(c).toLowerCase().trim(); });
+    var found = false;
+    rowLower.forEach(function(cell, ci) {
+      if (cell.match(/student\s*name|^name$/)) { colMap.name = ci; found = true; }
+      else if (cell.match(/sl\s*(id|no|num)/)) colMap.sl_id = ci;
+      else if (cell.match(/sl\s*name/)) colMap.sl_name = ci;
+      else if (cell.match(/cluster/)) colMap.cluster_id = ci;
+      else if (cell.match(/team\s*(code|id)/)) colMap.team_code = ci;
+      else if (cell.match(/team\s*(#|no|num|number)/)) colMap.team_number = ci;
+      else if (cell.match(/gender|sex/)) colMap.gender = ci;
+    });
+    if (found) { headerIdx = ri; break; }
+  }
+
+  var mapped = [];
+  var lastCluster='', lastSlId='', lastSlName='', lastTeamNum='', lastTeamCode='';
+  for (var r = headerIdx + 1; r < rawRows.length; r++) {
+    var row = rawRows[r];
+    var name = colMap.name !== undefined ? String(row[colMap.name]||'').trim() : '';
+    if (!name) continue;
+    // Fill-down: carry forward last non-empty value for grouped/hierarchical columns
+    var cluster  = (colMap.cluster_id  !== undefined ? String(row[colMap.cluster_id] ||'').trim() : '') || lastCluster;
+    var slId     = (colMap.sl_id       !== undefined ? String(row[colMap.sl_id]      ||'').trim() : '') || lastSlId;
+    var slName   = (colMap.sl_name     !== undefined ? String(row[colMap.sl_name]    ||'').trim() : '') || lastSlName;
+    var teamNum  = (colMap.team_number !== undefined ? String(row[colMap.team_number]||'').trim() : '') || lastTeamNum;
+    var teamCode = (colMap.team_code   !== undefined ? String(row[colMap.team_code]  ||'').trim() : '') || lastTeamCode;
+    lastCluster=cluster; lastSlId=slId; lastSlName=slName; lastTeamNum=teamNum; lastTeamCode=teamCode;
+    mapped.push([
+      schoolCode, schoolName, grade, section,
+      cluster, slId, slName, teamNum, teamCode,
+      name,
+      colMap.gender !== undefined ? String(row[colMap.gender]||'').trim() : '',
+      now, fileUrl
+    ]);
+  }
+  return mapped;
+}
+
+function extractStudentDataFromExcel(fileObj, fileUrl, payload, targetSS, partnerName, partnerFolderId) {
+  try {
+    var blob = Utilities.newBlob(Utilities.base64Decode(fileObj.data), fileObj.mime || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', fileObj.name || 'upload.xlsx');
+    var tempFile = DriveApp.createFile(blob);
+    try {
+      var ss = SpreadsheetApp.openById(tempFile.getId());
+      var rawRows = ss.getSheets()[0].getDataRange().getValues();
+      var rows = mapRowsToStudentSchema(rawRows, payload, fileUrl);
+      writeStudentRows(rows, payload, targetSS, partnerName, partnerFolderId, fileUrl, 'Excel');
+    } finally {
+      tempFile.setTrashed(true);
+    }
+  } catch(e) {
+    Logger.log('extractStudentDataFromExcel error: ' + e.message);
+    var schema = FORM_SCHEMAS['form3_student_data'];
+    updatePhotoUrl(targetSS, schema, payload.submissionId||'', 'Extraction Status', 'Error (Excel): ' + e.message.substring(0, 120));
+  }
+}
+
+function extractStudentDataFromCSV(fileObj, fileUrl, payload, targetSS, partnerName, partnerFolderId) {
+  try {
+    var csvText = Utilities.newBlob(Utilities.base64Decode(fileObj.data)).getDataAsString('UTF-8');
+    var rawRows = Utilities.parseCsv(csvText);
+    var rows = mapRowsToStudentSchema(rawRows, payload, fileUrl);
+    writeStudentRows(rows, payload, targetSS, partnerName, partnerFolderId, fileUrl, 'CSV');
+  } catch(e) {
+    Logger.log('extractStudentDataFromCSV error: ' + e.message);
+    var schema = FORM_SCHEMAS['form3_student_data'];
+    updatePhotoUrl(targetSS, schema, payload.submissionId||'', 'Extraction Status', 'Error (CSV): ' + e.message.substring(0, 120));
   }
 }
 
