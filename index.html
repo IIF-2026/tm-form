@@ -1147,8 +1147,7 @@ $('school').addEventListener('change', async () => {
   }
   $('f1loader').style.display = 'block';
   try {
-    const r = await fetch(url + '?action=schoolData&schoolCode=' + encodeURIComponent(code) + '&token=' + encodeURIComponent(s.token));
-    const j = await r.json();
+    const j = await fetchSchoolData(url, code, s.token);
     if (j.status === 'ok' && j.data && j.data.form1_school_orientation) {
       $('f1dupblock').style.display = 'block';
       f1BlockedByDup = true;
@@ -1288,22 +1287,43 @@ function collect(){
 // holds {name, mime, data(base64)} per photo input, filled at submit time
 const PHOTOS = { h1:null };
 function readPhoto(id){
-  return new Promise((resolve)=>{
-    const f=$(id).files[0];
-    if(!f){ resolve(null); return; }
-    const r=new FileReader();
-    r.onload=()=>resolve({ name:f.name, mime:f.type||'image/jpeg', data:String(r.result).split(',')[1] });
-    r.onerror=()=>resolve(null);
-    r.readAsDataURL(f);
-  });
+  const f=$(id).files[0];
+  if(!f) return Promise.resolve(null);
+  return compressImage(f, 1280, 0.75);
 }
 function readFiles(fileArray){
-  return Promise.all(Array.from(fileArray).map(f=>new Promise(resolve=>{
-    const r=new FileReader();
-    r.onload=()=>resolve({name:f.name, mime:f.type||'application/octet-stream', data:String(r.result).split(',')[1]});
-    r.onerror=()=>resolve(null);
-    r.readAsDataURL(f);
-  }))).then(arr=>arr.filter(Boolean));
+  return Promise.all(Array.from(fileArray).map(f=>compressImage(f, 1280, 0.75))).then(arr=>arr.filter(Boolean));
+}
+function compressImage(file, maxWidth, quality){
+  maxWidth=maxWidth||1280; quality=quality||0.75;
+  return new Promise(resolve=>{
+    if(!file){ resolve(null); return; }
+    if(!file.type.startsWith('image/')){
+      const r=new FileReader();
+      r.onload=()=>resolve({name:file.name,mime:file.type||'application/octet-stream',data:String(r.result).split(',')[1]});
+      r.onerror=()=>resolve(null);
+      r.readAsDataURL(file);
+      return;
+    }
+    const img=new Image();
+    const objUrl=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(objUrl);
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(w>maxWidth){ h=Math.round(h*maxWidth/w); w=maxWidth; }
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve({name:file.name.replace(/\.[^.]+$/,'.jpg'),mime:'image/jpeg',data:canvas.toDataURL('image/jpeg',quality).split(',')[1]});
+    };
+    img.onerror=()=>{
+      const r=new FileReader();
+      r.onload=()=>resolve({name:file.name,mime:file.type||'image/jpeg',data:String(r.result).split(',')[1]});
+      r.onerror=()=>resolve(null);
+      r.readAsDataURL(file);
+    };
+    img.src=objUrl;
+  });
 }
 function readAudio(id){
   return new Promise((resolve)=>{
@@ -1341,7 +1361,7 @@ $('submitBtn').onclick = async () => {
   $('submitBtn').textContent='Sending…';
   const ok=await send(payload);
   if(ok==='duplicate'){ $('submitBtn').disabled=false; $('submitBtn').textContent='Submit'; toast('This school has already submitted Form 1. Contact admin for changes.'); return; }
-  if(ok){ localStorage.removeItem(DRAFT_KEY); showDone(payload.submissionId); }
+  if(ok){ localStorage.removeItem(DRAFT_KEY); scDel('tm_sd_'+(payload.header&&payload.header.schoolCode||'')); showDone(payload.submissionId); }
   else { queue(payload); showDone(payload.submissionId,true); }
 };
 
@@ -1353,8 +1373,10 @@ async function send(payload){
       headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight
       body:JSON.stringify(payload)});
     const j=await r.json();
-    if(j.status==='duplicate'){ return 'duplicate'; }
-    return j.status==='success';
+    if(j.status==='duplicate') return 'duplicate';
+    if(j.status==='success') return true;
+    toast(j.message||'Submission failed. Please try again.');
+    return false;
   }catch(e){ return false; }
 }
 
@@ -1456,6 +1478,48 @@ function clearSession(){ localStorage.removeItem(SESSION_KEY); }
 function clearUserData(){
   localStorage.removeItem(DRAFT_KEY);
   Object.keys(localStorage).filter(k=>k.startsWith('tm_schools_')).forEach(k=>localStorage.removeItem(k));
+  Object.keys(sessionStorage).filter(k=>k.startsWith('tm_sd_')||k.startsWith('tm_f3subs_')||k.startsWith('tm_f4subs_')||k==='tm_allSS').forEach(k=>sessionStorage.removeItem(k));
+}
+
+function scGet(key){ try{ return JSON.parse(sessionStorage.getItem(key)); }catch(e){ return null; } }
+function scSet(key,data){ try{ sessionStorage.setItem(key,JSON.stringify(data)); }catch(e){} }
+function scDel(key){ try{ sessionStorage.removeItem(key); }catch(e){} }
+
+async function fetchSchoolData(url,code,token){
+  const key='tm_sd_'+code;
+  const cached=scGet(key);
+  if(cached) return cached;
+  const r=await fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(token));
+  const j=await r.json();
+  if(j.status==='ok') scSet(key,j);
+  return j;
+}
+async function fetchAllSchoolStatus(url,token){
+  const key='tm_allSS';
+  const cached=scGet(key);
+  if(cached&&cached._ts&&(Date.now()-cached._ts)<300000) return cached;
+  const r=await fetch(url+'?action=allSchoolStatus&token='+encodeURIComponent(token));
+  const j=await r.json();
+  if(j.status==='ok'){ j._ts=Date.now(); scSet(key,j); }
+  return j;
+}
+async function fetchForm3Subs(url,code,token){
+  const key='tm_f3subs_'+code;
+  const cached=scGet(key);
+  if(cached) return cached;
+  const r=await fetch(url+'?action=allForm3Submissions&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(token));
+  const j=await r.json();
+  if(j.status==='ok') scSet(key,j);
+  return j;
+}
+async function fetchForm4Subs(url,code,token){
+  const key='tm_f4subs_'+code;
+  const cached=scGet(key);
+  if(cached) return cached;
+  const r=await fetch(url+'?action=allForm4Submissions&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(token));
+  const j=await r.json();
+  if(j.status==='ok') scSet(key,j);
+  return j;
 }
 
 function sessionToken(){ const s=getSession(); return s?s.token:''; }
@@ -1682,8 +1746,7 @@ async function loadSchoolDashboard(){
   const url=getCfg().url;
   if(!url){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
   try{
-    const r=await fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(s.token));
-    const j=await r.json();
+    const j=await fetchSchoolData(url, code, s.token);
     if(j.status!=='ok'){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
     renderSchoolDashboard(j.data);
   }catch(e){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">Could not load data. Try again.</p>'; }
@@ -1882,8 +1945,7 @@ async function loadIIFDashboard(){
   const url=getCfg().url;
   if(!url){ $('dashContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
   try{
-    const r=await fetch(url+'?action=allSchoolStatus&token='+encodeURIComponent(s.token));
-    const j=await r.json();
+    const j=await fetchAllSchoolStatus(url, s.token);
     if(j.status!=='ok'){ $('dashContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
     dashData=j.schools||[];
     renderDashTable();
@@ -1935,8 +1997,7 @@ async function loadTracker(){
   const url=getCfg().url;
   if(!url){ $('trackerContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
   try{
-    const r=await fetch(url+'?action=allSchoolStatus&token='+encodeURIComponent(s.token));
-    const j=await r.json();
+    const j=await fetchAllSchoolStatus(url, s.token);
     if(j.status!=='ok'){ $('trackerContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
     renderTrackerTable(j.schools||[]);
     $('trackerPartner').onchange=()=>renderTrackerTable(j.schools||[]);
@@ -2213,8 +2274,7 @@ $('f2school').addEventListener('change', async ()=>{
   if(!s||!url) return;
   $('f2loader').style.display='block';
   try{
-    const r=await fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(s.token));
-    const j=await r.json();
+    const j=await fetchSchoolData(url, code, s.token);
     const f1=j.status==='ok'&&j.data&&j.data.form1_school_orientation;
     if(!f1){
       $('f2form1block').style.display='block';
@@ -2318,6 +2378,7 @@ $('submit2Btn').onclick = async () => {
   $('submit2Btn').disabled=false; $('submit2Btn').textContent='Submit';
   if(ok==='duplicate'){ toast('This school has already submitted Form 2. Contact admin for changes.'); return; }
   if(ok){
+    scDel('tm_sd_'+payload.header.schoolCode);
     const sess2=getSession();
     const backBtn2=(sess2&&sess2.role==='School')
       ?`<button class="copybtn" onclick="sdData=null;showScreen('schoolDash')">&#8592; Back to Dashboard</button>`
@@ -2496,8 +2557,7 @@ function f3ApplyGradeDisables() {
 
 async function f3RefreshTracker(code, token, url) {
   try {
-    const r = await fetch(url+'?action=allForm3Submissions&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(token));
-    const j = await r.json();
+    const j = await fetchForm3Subs(url, code, token);
     if (j.status === 'ok') {
       window._f3Submissions = j.submissions || [];
     }
@@ -2521,11 +2581,10 @@ $('f3school').addEventListener('change', async ()=>{
   if(!s||!url) return;
   $('f3loader').style.display='block';
   try{
-    const [r1, r2] = await Promise.all([
-      fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(s.token)),
-      fetch(url+'?action=allForm3Submissions&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(s.token))
+    const [j1, j2] = await Promise.all([
+      fetchSchoolData(url, code, s.token),
+      fetchForm3Subs(url, code, s.token)
     ]);
-    const [j1, j2] = await Promise.all([r1.json(), r2.json()]);
     const f2=j1.status==='ok'&&j1.data&&j1.data.form2_schools_contact;
     if(!f2){
       $('f3form2block').style.display='block';
@@ -2589,6 +2648,7 @@ $('submit3Btn').onclick = async () => {
   const ok=await send(payload);
   $('submit3Btn').disabled=false; $('submit3Btn').textContent='Submit';
   if(ok){
+    scDel('tm_sd_'+payload.header.schoolCode); scDel('tm_f3subs_'+payload.header.schoolCode);
     const submittedGrade=f3SelectedGrade, submittedSec=sec;
     toast(`Grade ${submittedGrade} – Section ${submittedSec} submitted!`);
     $('f3section').value='';
@@ -2664,11 +2724,10 @@ $('f4school').addEventListener('change', async ()=>{
   }
   $('f4gradeChips').innerHTML='<span class="buddy-spinner" style="width:20px;height:20px;border-width:3px;display:inline-block;vertical-align:middle"></span>';
   try {
-    const [r1,r2]=await Promise.all([
-      fetch(scriptUrl+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(session.token)),
-      fetch(scriptUrl+'?action=allForm4Submissions&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(session.token))
+    const [j1,j2]=await Promise.all([
+      fetchSchoolData(scriptUrl, code, session.token),
+      fetchForm4Subs(scriptUrl, code, session.token)
     ]);
-    const [j1,j2]=await Promise.all([r1.json(),r2.json()]);
     f4SchoolData=(j1&&j1.data)?j1.data:{};
     window._f4Submissions=(j2&&j2.status==='ok')?(j2.submissions||[]):[];
   } catch(e){ f4SchoolData={}; window._f4Submissions=[]; toast('Could not load school data. Try again.'); }
@@ -2914,6 +2973,7 @@ $('submit4Btn').onclick = async () => {
   const ok=await send(payload);
   $('submit4Btn').disabled=false; $('submit4Btn').textContent='Submit';
   if(ok){
+    scDel('tm_sd_'+payload.header.schoolCode); scDel('tm_f4subs_'+payload.header.schoolCode);
     const sess4=getSession();
     if(sess4&&sess4.role==='School'){
       toast('✅ '+payload.sls.length+' SL record(s) saved. Select another grade to add more entries.');
@@ -2963,8 +3023,7 @@ $('f5school').addEventListener('change', async ()=>{
   if(!s||!url) return;
   $('f5loader').style.display='block';
   try{
-    const r=await fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(code)+'&token='+encodeURIComponent(s.token));
-    const j=await r.json();
+    const j=await fetchSchoolData(url, code, s.token);
     if(j.status==='ok'&&j.data&&j.data.form5_kits_handover){
       $('f5dupblock').style.display='block';
       $('submit5Btn').disabled=true; $('submit5Btn').style.opacity='0.45';
@@ -3071,6 +3130,7 @@ $('submit5Btn').onclick = async ()=>{
   const ok=await send(payload);
   $('submit5Btn').disabled=false; $('submit5Btn').textContent='Submit';
   if(ok){
+    scDel('tm_sd_'+payload.header.schoolCode);
     $('app5').innerHTML='<div class="done"><div class="big">✅</div><h2>Submitted</h2>'
       +'<p>Kits handover info saved.</p><span class="idpill">'+payload.submissionId+'</span>'
       +'<br><br><button class="copybtn" onclick="location.reload()">Fill another</button></div>';
@@ -3985,14 +4045,11 @@ async function sbPhotoSelected(teamCode, input){
   if(imgEl) imgEl.src=objectUrl;
   if(wrapEl) wrapEl.style.display='block';
   if(statusEl) statusEl.textContent='Photo ready (not yet submitted)';
-  const base64 = await new Promise(res=>{
-    const reader=new FileReader();
-    reader.onload=e=>res(e.target.result.split(',')[1]);
-    reader.readAsDataURL(file);
-  });
+  const _compressed = await compressImage(file, 1280, 0.75);
+  const base64 = _compressed ? _compressed.data : null;
   if(!schoolBuddyState.localArtifacts[teamCode]) schoolBuddyState.localArtifacts[teamCode]={};
   schoolBuddyState.localArtifacts[teamCode].photoBase64 = base64;
-  schoolBuddyState.localArtifacts[teamCode].photoMime   = file.type||'image/jpeg';
+  schoolBuddyState.localArtifacts[teamCode].photoMime   = 'image/jpeg';
   sbUpdateTeamStatus(teamCode);
   sbUpdateButtons();
   sbMarkPhotoReady(teamCode, input.hasAttribute('capture') ? 'take' : 'upload');
@@ -4784,7 +4841,7 @@ async function soFetchSchoolData(schoolCode){
   $('soSchoolLoader').style.display='block';
   try{
     const [sd,gc]=await Promise.all([
-      fetch(url+'?action=schoolData&schoolCode='+encodeURIComponent(schoolCode)+'&token='+encodeURIComponent(s.token)).then(r=>r.json()),
+      fetchSchoolData(url, schoolCode, s.token),
       fetch(url+'?action=getGradeConfig&token='+encodeURIComponent(s.token)).then(r=>r.json())
     ]);
     const f1=sd.status==='ok'&&sd.data&&sd.data.form1_school_orientation;
@@ -5382,17 +5439,12 @@ async function submitSessionObs(){
     async function readFile(id){
       const f=soPhotos[id];
       if(!f) return null;
-      return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res({name:f.name,mime:f.type||'image/jpeg',data:String(r.result).split(',')[1]}); r.onerror=()=>res(null); r.readAsDataURL(f); });
+      return compressImage(f, 1280, 0.75);
     }
     async function readMultiFiles(id){
       const files=soPhotos[id];
       if(!files||!files.length) return [];
-      return Promise.all(files.map(f=>new Promise(res=>{
-        const r=new FileReader();
-        r.onload=()=>res({name:f.name,mime:f.type||'image/jpeg',data:String(r.result).split(',')[1]});
-        r.onerror=()=>res(null);
-        r.readAsDataURL(f);
-      })));
+      return (await Promise.all(files.map(f=>compressImage(f, 1280, 0.75)))).filter(Boolean);
     }
 
     const q14Photos=await readMultiFiles('so_q14');
@@ -5456,6 +5508,7 @@ async function submitSessionObs(){
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const j=await r.json();
     if(j.status==='success'){
+      scDel('tm_allSS');
       const submittedSess=soState.sessionIndex+1;
       if(isIIF){
         soState.iifSubmittedSessions=soState.iifSubmittedSessions||[];

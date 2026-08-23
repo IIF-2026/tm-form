@@ -1,0 +1,8 @@
+sw.js
+manifest.json
+*.xlsx
+*.pdf
+*.png
+*.py
+*.md
+sl_scenario.png

@@ -12,6 +12,22 @@ var SHEET_ID = '1OXs8suaKhTvpgLoGh0CYkVzDQYJI-WXvCL4D30bWEpk';
 var SECRET_TOKEN = 'TM2026SECRET';
 var SESSION_DAYS = 30;
 
+// -------- CACHE HELPERS --------
+
+function getCached(key) {
+  var val = CacheService.getScriptCache().get(key);
+  return val ? JSON.parse(val) : null;
+}
+
+function setCached(key, data, ttl) {
+  var s = JSON.stringify(data);
+  if (s.length < 100000) CacheService.getScriptCache().put(key, s, ttl || 600);
+}
+
+function clearCachedKeys(keys) {
+  CacheService.getScriptCache().removeAll(keys);
+}
+
 // -------- Column definitions per form --------
 var FORM_SCHEMAS = {
   form1_school_orientation: {
@@ -310,9 +326,16 @@ function handleGetSchools() {
 function handleSchoolData(p) {
   var schoolCode = (p.schoolCode || '').trim().toUpperCase();
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
+
+  var cacheKey = 'sd_' + schoolCode;
+  var cached = getCached(cacheKey);
+  if (cached) return json(cached);
+
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var pEntry = (getPartnerConfig(ss)[partnerName] || {});
+  var targetSS = (partnerName && pEntry.sheetId) ? SpreadsheetApp.openById(pEntry.sheetId) : ss;
+
   var result = {};
   var formKeys = ['form1_school_orientation','form2_schools_contact','form3_student_data','form4_sl_selection','form5_kits_handover'];
   formKeys.forEach(function(fk) {
@@ -336,12 +359,18 @@ function handleSchoolData(p) {
     header.forEach(function(col, idx) { obj[col] = latest[idx]; });
     result[fk] = obj;
   });
-  return json({ status: 'ok', data: result });
+
+  var response = { status: 'ok', data: result };
+  setCached(cacheKey, response, 300);
+  return json(response);
 }
 
 // -------- ALL SCHOOL STATUS (IIF dashboard / tracker) --------
 
 function handleAllSchoolStatus(p) {
+  var cached = getCached('allSchoolStatus');
+  if (cached) return json(cached);
+
   var ss = getSheet();
   var schoolsSheet = ss.getSheetByName('Schools_List');
   if (!schoolsSheet) return json({ status: 'ok', schools: [] });
@@ -396,7 +425,9 @@ function handleAllSchoolStatus(p) {
     });
     schools.push(entry);
   }
-  return json({ status: 'ok', schools: schools });
+  var result = { status: 'ok', schools: schools };
+  setCached('allSchoolStatus', result, 300);
+  return json(result);
 }
 
 // -------- FORM DATA (edit/re-submit) --------
@@ -409,7 +440,7 @@ function handleFormData(p) {
   if (!schema) return json({ status: 'error', message: 'Unknown formId' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
   var sheet = targetSS.getSheetByName(schema.tabName);
   if (!sheet) return json({ status: 'ok', row: null });
   var data = sheet.getDataRange().getValues();
@@ -488,19 +519,21 @@ function handleFormSubmit(payload) {
   }
 
   uploadPhotos(payload, ss, partner, partnerSS);
-
+  var _sc = ((payload.header || {}).schoolCode || '').trim().toUpperCase();
+  clearCachedKeys(['allSchoolStatus'].concat(_sc ? ['sd_' + _sc] : []));
   return json({ status: 'success', submissionId: payload.submissionId || '' });
 }
 
 // -------- PHOTO UPLOAD --------
 
 function uploadPhotos(payload, ss, partner, partnerSS) {
+  var partnerFolderId = null;
   var folder;
   if (partner) {
     try {
-      var pCfg = getPartnerConfig(ss);
-      var pEntry = pCfg[partner];
-      if (pEntry && pEntry.folderId) {
+      var pEntry = (getPartnerConfig(ss)[partner]) || {};
+      if (pEntry.folderId) {
+        partnerFolderId = pEntry.folderId;
         folder = getOrCreatePartnerSubFolder(pEntry.folderId, 'TM_FormPhotos');
       }
     } catch(e) {}
@@ -530,14 +563,6 @@ function uploadPhotos(payload, ss, partner, partnerSS) {
     var sec3 = ((payload.header||{}).section||'').toUpperCase().replace(/[^a-zA-Z0-9]/g,'');
     // Support new multi-file `photos` array and legacy single `photo`
     var photosArr3 = payload.photos || (payload.photo ? [payload.photo] : []);
-    var partnerFolderId3 = null;
-    if (partner) {
-      try {
-        var pCfg3 = getPartnerConfig(ss);
-        var pEntry3 = pCfg3[partner];
-        if (pEntry3 && pEntry3.folderId) partnerFolderId3 = pEntry3.folderId;
-      } catch(e) {}
-    }
     var uploadedUrls3 = [];
     photosArr3.forEach(function(fileObj, idx) {
       var origName = fileObj.name || ('file_' + (idx+1));
@@ -547,11 +572,11 @@ function uploadPhotos(payload, ss, partner, partnerSS) {
       if (fileUrl) uploadedUrls3.push(fileUrl);
       var mime3 = (fileObj.mime || '').toLowerCase();
       if (mime3 === 'text/csv' || origName.match(/\.csv$/i)) {
-        extractStudentDataFromCSV(fileObj, fileUrl||'', payload, targetSS, partner, partnerFolderId3);
+        extractStudentDataFromCSV(fileObj, fileUrl||'', payload, targetSS, partner, partnerFolderId);
       } else if (mime3.indexOf('spreadsheet') !== -1 || origName.match(/\.xlsx?$/i)) {
-        extractStudentDataFromExcel(fileObj, fileUrl||'', payload, targetSS, partner, partnerFolderId3);
+        extractStudentDataFromExcel(fileObj, fileUrl||'', payload, targetSS, partner, partnerFolderId);
       } else if (fileObj.data) {
-        extractStudentDataFromPhoto(fileObj.data, fileUrl||'', payload, targetSS, partner, partnerFolderId3, fileObj.mime, idx > 0);
+        extractStudentDataFromPhoto(fileObj.data, fileUrl||'', payload, targetSS, partner, partnerFolderId, fileObj.mime, idx > 0);
       }
     });
     if (uploadedUrls3.length > 0) {
@@ -603,15 +628,18 @@ function getOrCreatePartnerConfigTab(ss) {
 }
 
 function getPartnerConfig(ss) {
+  var cached = getCached('partnerConfig');
+  if (cached) return cached;
+
   var sheet = getOrCreatePartnerConfigTab(ss);
   var data = sheet.getDataRange().getValues();
   if (data.length < 1) return {};
   var header = data[0].map(function(h) { return String(h).trim(); });
   var folderIdx    = header.indexOf('FolderID');         if (folderIdx < 0)   folderIdx = 1;
   var sheetIdx     = header.indexOf('SheetID');          if (sheetIdx < 0)    sheetIdx = 2;
-  var studentDbIdx      = header.indexOf('StudentDbSheetId');    // -1 if column not yet added
-  var ideaFbIdx         = header.indexOf('IdeaFeedbackSheetId'); // -1 if column not yet added
-  var sessionObsIdx     = header.indexOf('SessionObsSheetId');   // -1 if column not yet added
+  var studentDbIdx      = header.indexOf('StudentDbSheetId');
+  var ideaFbIdx         = header.indexOf('IdeaFeedbackSheetId');
+  var sessionObsIdx     = header.indexOf('SessionObsSheetId');
   var config = {};
   for (var i = 1; i < data.length; i++) {
     var name = String(data[i][0] || '').trim();
@@ -624,6 +652,7 @@ function getPartnerConfig(ss) {
       sessionObsSheetId:   sessionObsIdx >= 0 ? String(data[i][sessionObsIdx] || '').trim() : ''
     };
   }
+  setCached('partnerConfig', config, 600);
   return config;
 }
 
@@ -633,6 +662,7 @@ function updatePartnerSheetId(ss, partnerName, sheetId) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0] || '').trim() === partnerName) {
       sheet.getRange(i + 1, 3).setValue(sheetId);
+      clearCachedKeys(['partnerConfig']);
       return;
     }
   }
@@ -650,6 +680,7 @@ function updatePartnerStudentDbId(ss, partnerName, sheetId) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0] || '').trim() === partnerName) {
       sheet.getRange(i + 1, colIdx + 1).setValue(sheetId);
+      clearCachedKeys(['partnerConfig']);
       return;
     }
   }
@@ -672,6 +703,13 @@ function getOrCreatePartnerSheet(partnerName, ss) {
   return newSheet;
 }
 
+function getPartnerSheet(partnerName, ss) {
+  if (!partnerName) return null;
+  var entry = (getPartnerConfig(ss)[partnerName]) || {};
+  if (!entry.sheetId) return null;
+  try { return SpreadsheetApp.openById(entry.sheetId); } catch(e) { return null; }
+}
+
 function getOrCreatePartnerSubFolder(partnerFolderId, subFolderName) {
   var parentFolder = DriveApp.getFolderById(partnerFolderId);
   var iter = parentFolder.getFoldersByName(subFolderName);
@@ -687,24 +725,29 @@ function getOrCreateNestedSubFolder(rootFolderId, pathSegments) {
 }
 
 function getPartnerForSchool(ss, schoolCode) {
-  var sheet = ss.getSheetByName('Schools_List');
-  if (!sheet) return '';
-  var data = sheet.getDataRange().getValues();
-  if (data.length < 2) return '';
-  var header = data[0].map(function(h) { return String(h).toLowerCase().trim(); });
-  var codeIdx = header.indexOf('school code');
-  if (codeIdx < 0) codeIdx = header.findIndex(function(h) { return h.indexOf('school') >= 0 && h.indexOf('code') >= 0; });
-  if (codeIdx < 0) codeIdx = 1;
-  var partnerIdx = header.indexOf('partner');
-  if (partnerIdx < 0) partnerIdx = header.findIndex(function(h) { return h.indexOf('partner') >= 0; });
-  if (partnerIdx < 0) partnerIdx = 2;
-  var normalCode = schoolCode.trim().toUpperCase();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][codeIdx] || '').trim().toUpperCase() === normalCode) {
-      return String(data[i][partnerIdx] || '').trim();
+  var map = getCached('schoolsPartnerMap');
+  if (!map) {
+    map = {};
+    var sheet = ss.getSheetByName('Schools_List');
+    if (sheet) {
+      var data = sheet.getDataRange().getValues();
+      if (data.length >= 2) {
+        var header = data[0].map(function(h) { return String(h).toLowerCase().trim(); });
+        var codeIdx = header.indexOf('school code');
+        if (codeIdx < 0) codeIdx = header.findIndex(function(h) { return h.indexOf('school') >= 0 && h.indexOf('code') >= 0; });
+        if (codeIdx < 0) codeIdx = 1;
+        var partnerIdx = header.indexOf('partner');
+        if (partnerIdx < 0) partnerIdx = header.findIndex(function(h) { return h.indexOf('partner') >= 0; });
+        if (partnerIdx < 0) partnerIdx = 2;
+        for (var i = 1; i < data.length; i++) {
+          var code = String(data[i][codeIdx] || '').trim().toUpperCase();
+          if (code) map[code] = String(data[i][partnerIdx] || '').trim();
+        }
+      }
     }
+    setCached('schoolsPartnerMap', map, 600);
   }
-  return '';
+  return map[schoolCode.trim().toUpperCase()] || '';
 }
 
 // -------- ROW BUILDERS --------
@@ -772,7 +815,7 @@ function handleAllForm3Submissions(p) {
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
   var schema = FORM_SCHEMAS['form3_student_data'];
   var sheet = targetSS.getSheetByName(schema.tabName);
   if (!sheet) return json({ status: 'ok', submissions: [] });
@@ -796,7 +839,7 @@ function handleAllForm4Submissions(p) {
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
   var schema = FORM_SCHEMAS['form4_sl_selection'];
   var sheet = targetSS.getSheetByName(schema.tabName);
   if (!sheet) return json({ status: 'ok', submissions: [] });
@@ -1152,7 +1195,7 @@ function reExtractFailed() {
       total: totalStudentsIdx >= 0 ? Number(data[i][totalStudentsIdx] || 0) : 0
     };
     var partnerName = getPartnerForSchool(ss, fakePayload.header.schoolCode);
-    var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+    var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
     var reFolderId = null;
     if (partnerName) {
       try {
@@ -1337,7 +1380,7 @@ function handleGetTeamData(p) {
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
   var sheet = targetSS.getSheetByName('TM_Teams_Data');
   if (!sheet) return json({ status: 'ok', sls: [] });
   var data = sheet.getDataRange().getValues();
@@ -1376,7 +1419,7 @@ function handleGetSchoolSummary(p) {
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
 
   // --- Read teams ---
   var teams = [];
@@ -1460,7 +1503,7 @@ function handleExtractTeamData(payload) {
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
   var f2sheet = targetSS.getSheetByName('Form2_StudentData');
   if (!f2sheet) return json({ status: 'error', message: 'Form2_StudentData not found' });
   var f2data = f2sheet.getDataRange().getValues();
@@ -1823,7 +1866,7 @@ function handleGetSchoolGradesAndSections(p) {
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  var targetSS = partnerName ? getOrCreatePartnerSheet(partnerName, ss) : ss;
+  var targetSS = partnerName ? (getPartnerSheet(partnerName, ss) || ss) : ss;
   var schema = FORM_SCHEMAS['form3_student_data'];
   var sheet = targetSS.getSheetByName(schema.tabName);
   if (!sheet) return json({ status: 'ok', gradesAndSections: [] });
@@ -2232,11 +2275,13 @@ function handleGetGradeTeams(p) {
 
   var ss = getSheet();
   var partner = getPartnerForSchool(ss, schoolCode);
+  var pCfg = getPartnerConfig(ss);
+  var pEntry = (pCfg[partner] || {});
 
   // Check if Form 3 was submitted for this school+grade
   var hasForm3 = false;
-  if (partner) {
-    var partnerSS = getOrCreatePartnerSheet(partner, ss);
+  if (partner && pEntry.sheetId) {
+    var partnerSS = SpreadsheetApp.openById(pEntry.sheetId);
     var f3sheet = partnerSS.getSheetByName('Students_Count_Info');
     if (f3sheet) {
       var f3data = f3sheet.getDataRange().getValues();
@@ -2252,9 +2297,7 @@ function handleGetGradeTeams(p) {
   }
   if (!hasForm3) return json({ status: 'ok', teams: [], state: 'no_form3' });
 
-  // Look up Student Database sheet for this partner
-  var pCfg = getPartnerConfig(ss);
-  var pEntry = (pCfg[partner] || {});
+  // pEntry already resolved above — no second config lookup
   var dbSheetId = pEntry.studentDbSheetId || '';
   if (!dbSheetId) return json({ status: 'ok', teams: [], state: 'not_extracted' });
 
@@ -2546,6 +2589,8 @@ function handleSessionObsSubmit(payload) {
     });
   });
 
+  var _scSO = ((payload.header || {}).schoolCode || '').trim().toUpperCase();
+  clearCachedKeys(['allSchoolStatus'].concat(_scSO ? ['sd_' + _scSO] : []));
   return json({ status: 'success', submissionId: sid });
 }
 
