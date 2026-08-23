@@ -2557,19 +2557,16 @@ function handleSessionObsSubmit(payload) {
   var schoolCode = ((payload.header || {}).schoolCode || 'SCH').replace(/[^a-zA-Z0-9]/g, '_');
   var grade = String((payload.header || {}).grade || '').replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
   var sid = payload.submissionId || '';
-  var yearLabel    = 'Year_' + level;
-  var gradeLabel   = 'Grade_' + grade;
-  var sessionLabel = 'Session_' + session;
 
   var sessionPhotosFolder, workbookPhotosFolder, activityPhotosFolder;
   try {
     if (pEntry.folderId) {
-      var sessionBaseFolder = getOrCreateNestedSubFolder(pEntry.folderId, [
-        'TM_SessionPhotos', yearLabel, gradeLabel, sessionLabel
+      var gradeBaseFolder = getOrCreateNestedSubFolder(pEntry.folderId, [
+        'TM_SessionPhotos', 'Level' + level, 'Grade' + grade
       ]);
-      sessionPhotosFolder  = getOrCreatePartnerSubFolder(sessionBaseFolder.getId(), 'Session_Photos');
-      workbookPhotosFolder = getOrCreatePartnerSubFolder(sessionBaseFolder.getId(), 'Workbook_Photos');
-      activityPhotosFolder = getOrCreatePartnerSubFolder(sessionBaseFolder.getId(), 'Activity_Photos');
+      sessionPhotosFolder  = getOrCreatePartnerSubFolder(gradeBaseFolder.getId(), 'Session');
+      workbookPhotosFolder = getOrCreatePartnerSubFolder(gradeBaseFolder.getId(), 'Workbook');
+      activityPhotosFolder = getOrCreatePartnerSubFolder(gradeBaseFolder.getId(), 'Activity');
     }
   } catch(e) {}
   var fallbackFolder = getOrCreateDriveFolder('TM_SessionPhotos');
@@ -2590,7 +2587,7 @@ function handleSessionObsSubmit(payload) {
   var q14Photos = (payload.common && payload.common.q14Photos) || [];
   var q14Urls = [];
   q14Photos.forEach(function(photo, idx) {
-    var url = uploadFile(photo, schoolCode + '_' + sid + '_session_' + (idx+1) + '.jpg', sessionPhotosFolder);
+    var url = uploadFile(photo, schoolCode + '_S' + session + '_' + (idx+1) + '.jpg', sessionPhotosFolder);
     if (url) q14Urls.push(url);
   });
   if (q14Urls.length) updateSOPhotoUrl(tab, sid, 'Q14 Session Photos', q14Urls.join(', '));
@@ -2598,7 +2595,7 @@ function handleSessionObsSubmit(payload) {
   var q16Urls = [];
   q16Files.forEach(function(fp) {
     if (!fp.photo) return;
-    var fileName = 'WBPG_' + (fp.fileTag || 'Q16') + '_' + (fp.photo.name || 'photo.jpg');
+    var fileName = schoolCode + '_S' + session + '_' + (fp.fileTag || 'Q16') + '.jpg';
     var url = uploadFile(fp.photo, fileName, workbookPhotosFolder);
     if (url) q16Urls.push(url);
   });
@@ -2615,7 +2612,7 @@ function handleSessionObsSubmit(payload) {
       if (!photos || !photos.length) return;
       var urls = [];
       photos.forEach(function(photo, idx) {
-        var fileName = schoolCode+'_'+sid+'_act'+actNum+'_'+qKey+'_'+(idx+1)+'.jpg';
+        var fileName = schoolCode + '_S' + session + '_act' + actNum + '_' + qKey + '_' + (idx+1) + '.jpg';
         var url = uploadFile(photo, fileName, activityPhotosFolder);
         if (url) urls.push(url);
       });
