@@ -2590,7 +2590,10 @@ function handleSessionObsSubmit(payload) {
   });
 
   var _scSO = ((payload.header || {}).schoolCode || '').trim().toUpperCase();
-  clearCachedKeys(['allSchoolStatus'].concat(_scSO ? ['sd_' + _scSO] : []));
+  var _lvSO = String((payload.header || {}).level || '');
+  var keysToInvalidate = ['allSchoolStatus'].concat(_scSO ? ['sd_' + _scSO] : []);
+  if (_scSO && _lvSO) keysToInvalidate.push('so_' + _scSO + '_L' + _lvSO);
+  clearCachedKeys(keysToInvalidate);
   return json({ status: 'success', submissionId: sid });
 }
 
@@ -2641,9 +2644,13 @@ function handleGetSessionObs(p) {
   var level      = String(p.level || '').trim();
   if (!schoolCode || !level) return json({ status: 'error', message: 'schoolCode and level required' });
 
+  var cacheKey = 'so_' + schoolCode + '_L' + level;
+  var cached = getCached(cacheKey);
+  if (cached) return json(cached);
+
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
-  if (!partnerName) return json({ status: 'ok', submitted: [] });
+  if (!partnerName) return json({ status: 'ok', submitted: [], iifSubmitted: [] });
 
   var soSheet = getOrCreateSessionObsSheet(partnerName, ss);
   var submitted = [];
@@ -2674,5 +2681,7 @@ function handleGetSessionObs(p) {
     if (teacherFound) submitted.push(sess);
     if (iifFound)     iifSubmitted.push(sess);
   }
-  return json({ status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted });
+  var result = { status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted };
+  setCached(cacheKey, result, 300);
+  return json(result);
 }

@@ -1522,6 +1522,16 @@ async function fetchForm4Subs(url,code,token){
   return j;
 }
 
+async function fetchSessionObs(url,code,level,token){
+  const key='tm_so_'+code+'_L'+level;
+  const cached=scGet(key);
+  if(cached) return cached;
+  const r=await fetch(url+'?action=getSessionObs&schoolCode='+encodeURIComponent(code)+'&level='+encodeURIComponent(level)+'&token='+encodeURIComponent(token));
+  const j=await r.json();
+  if(j.status==='ok') scSet(key,j);
+  return j;
+}
+
 function sessionToken(){ const s=getSession(); return s?s.token:''; }
 function hasPerm(key){
   const s=getSession(); if(!s) return false;
@@ -4890,8 +4900,7 @@ async function soSelectUnit(n){
   $('soSessionCards').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px">Loading…</p>';
   try{
     const s=getSession(); const url=getCfg().url;
-    const r=await fetch(`${url}?action=getSessionObs&token=${encodeURIComponent(s.token)}&schoolCode=${encodeURIComponent(soState.schoolCode)}&level=${encodeURIComponent(soState.level)}`);
-    const j=await r.json();
+    const j=await fetchSessionObs(url,soState.schoolCode,soState.level,s.token);
     if(j.status==='ok'){
       soState.submittedSessions=j.submitted||[];
       soState.iifSubmittedSessions=j.iifSubmitted||[];
@@ -5517,6 +5526,7 @@ async function submitSessionObs(){
         soState.submittedSessions=soState.submittedSessions||[];
         if(!soState.submittedSessions.includes(submittedSess)) soState.submittedSessions.push(submittedSess);
       }
+      scDel('tm_so_'+soState.schoolCode+'_L'+soState.level);
       toast('Observation submitted successfully ✓');
       showScreen('sessionObsSessions');
     } else {
