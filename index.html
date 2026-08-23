@@ -1478,7 +1478,7 @@ function clearSession(){ localStorage.removeItem(SESSION_KEY); }
 function clearUserData(){
   localStorage.removeItem(DRAFT_KEY);
   Object.keys(localStorage).filter(k=>k.startsWith('tm_schools_')).forEach(k=>localStorage.removeItem(k));
-  Object.keys(sessionStorage).filter(k=>k.startsWith('tm_sd_')||k.startsWith('tm_f3subs_')||k.startsWith('tm_f4subs_')||k==='tm_allSS').forEach(k=>sessionStorage.removeItem(k));
+  Object.keys(sessionStorage).filter(k=>k.startsWith('tm_')).forEach(k=>sessionStorage.removeItem(k));
 }
 
 function scGet(key){ try{ return JSON.parse(sessionStorage.getItem(key)); }catch(e){ return null; } }
