@@ -327,6 +327,7 @@ function handleSchoolData(p) {
   var schoolCode = (p.schoolCode || '').trim().toUpperCase();
   if (!schoolCode) return json({ status: 'error', message: 'schoolCode required' });
 
+  // Fast path: per-school result already cached
   var cacheKey = 'sd_' + schoolCode;
   var cached = getCached(cacheKey);
   if (cached) return json(cached);
@@ -334,30 +335,54 @@ function handleSchoolData(p) {
   var ss = getSheet();
   var partnerName = getPartnerForSchool(ss, schoolCode);
   var pEntry = (getPartnerConfig(ss)[partnerName] || {});
-  var targetSS = (partnerName && pEntry.sheetId) ? SpreadsheetApp.openById(pEntry.sheetId) : ss;
+  var partnerKey = partnerName || 'master';
+  var targetSS = null;
+  function getTargetSS() {
+    if (!targetSS) targetSS = (partnerName && pEntry.sheetId) ? SpreadsheetApp.openById(pEntry.sheetId) : ss;
+    return targetSS;
+  }
 
   var result = {};
   var formKeys = ['form1_school_orientation','form2_schools_contact','form3_student_data','form4_sl_selection','form5_kits_handover'];
   formKeys.forEach(function(fk) {
     var schema = FORM_SCHEMAS[fk];
     if (!schema) return;
-    var sheet = targetSS.getSheetByName(schema.tabName);
-    if (!sheet) { result[fk] = null; return; }
-    var data = sheet.getDataRange().getValues();
-    var header = data[0];
-    var scIdx = header.indexOf('School Code');
-    var statusIdx = header.indexOf('Status');
-    var latest = null, latestDate = null;
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][scIdx]).trim().toUpperCase() !== schoolCode) continue;
-      if (statusIdx >= 0 && String(data[i][statusIdx]).toLowerCase() === 'superseded') continue;
-      var d = new Date(data[i][1]);
-      if (!latestDate || d > latestDate) { latestDate = d; latest = data[i]; }
+
+    // Tab-level cache: processed map {schoolCode -> latestRowObj}
+    // Size is proportional to number of schools (~20), not total rows (~200+),
+    // so always well within the 100KB CacheService limit.
+    var tabKey = 'tab_' + partnerKey + '_' + fk;
+    var schoolMap = getCached(tabKey);
+    if (!schoolMap) {
+      var sheet = getTargetSS().getSheetByName(schema.tabName);
+      if (!sheet) { result[fk] = null; return; }
+      var rows = sheet.getDataRange().getValues();
+      var header = rows[0];
+      var scIdx = header.indexOf('School Code');
+      var stIdx = header.indexOf('Status');
+      schoolMap = {};
+      for (var i = 1; i < rows.length; i++) {
+        if (stIdx >= 0 && String(rows[i][stIdx]).toLowerCase() === 'superseded') continue;
+        var sc = String(rows[i][scIdx]).trim().toUpperCase();
+        if (!sc) continue;
+        var d = new Date(rows[i][1]);
+        var existing = schoolMap[sc];
+        if (!existing || d > new Date(existing._ts)) {
+          var obj = {};
+          header.forEach(function(col, idx) { obj[col] = rows[i][idx]; });
+          obj._ts = rows[i][1];
+          schoolMap[sc] = obj;
+        }
+      }
+      setCached(tabKey, schoolMap, 300);
     }
-    if (!latest) { result[fk] = null; return; }
-    var obj = {};
-    header.forEach(function(col, idx) { obj[col] = latest[idx]; });
-    result[fk] = obj;
+
+    // O(1) lookup — no loop, no sheet read on cache hit
+    var entry = schoolMap[schoolCode];
+    if (!entry) { result[fk] = null; return; }
+    var clean = {};
+    Object.keys(entry).forEach(function(k) { if (k !== '_ts') clean[k] = entry[k]; });
+    result[fk] = clean;
   });
 
   var response = { status: 'ok', data: result };
@@ -520,7 +545,11 @@ function handleFormSubmit(payload) {
 
   uploadPhotos(payload, ss, partner, partnerSS);
   var _sc = ((payload.header || {}).schoolCode || '').trim().toUpperCase();
-  clearCachedKeys(['allSchoolStatus'].concat(_sc ? ['sd_' + _sc] : []));
+  var _partnerKey = partner || 'master';
+  var keysToInvalidate = ['allSchoolStatus'];
+  if (_sc) keysToInvalidate.push('sd_' + _sc);
+  keysToInvalidate.push('tab_' + _partnerKey + '_' + payload.formId);
+  clearCachedKeys(keysToInvalidate);
   return json({ status: 'success', submissionId: payload.submissionId || '' });
 }
 
