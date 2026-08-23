@@ -2237,6 +2237,8 @@ function getOrCreateGradeConfigTab(ss) {
 }
 
 function handleGetGradeConfig(p) {
+  var cached = getCached('gradeConfig');
+  if (cached) return json(cached);
   var ss = getSheet();
   var sheet = getOrCreateGradeConfigTab(ss);
   var data = sheet.getDataRange().getValues();
@@ -2265,7 +2267,9 @@ function handleGetGradeConfig(p) {
     if (!grade || !level) continue;
     configs.push({ partner: partner, schoolTrack: schoolTrack, grade: grade, level: level });
   }
-  return json({ status: 'ok', configs: configs });
+  var result = { status: 'ok', configs: configs };
+  setCached('gradeConfig', result, 3600);
+  return json(result);
 }
 
 function handleGetGradeTeams(p) {
@@ -2332,6 +2336,7 @@ function handleSaveGradeConfig(payload) {
   gradeConfigs.forEach(function(gc) {
     if (gc.grade && gc.level) sheet.appendRow([String(gc.partner||''), String(gc.schoolTrack||''), String(gc.grade), String(gc.level)]);
   });
+  clearCachedKeys(['gradeConfig']);
   return json({ status: 'ok' });
 }
 

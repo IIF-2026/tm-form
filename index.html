@@ -4846,13 +4846,23 @@ async function soOnSchoolChange(){
   await soFetchSchoolData(soState.schoolCode);
 }
 
+async function fetchGradeConfig(url,token){
+  const key='tm_gradeConfig';
+  const cached=scGet(key);
+  if(cached) return cached;
+  const r=await fetch(url+'?action=getGradeConfig&token='+encodeURIComponent(token));
+  const j=await r.json();
+  if(j.status==='ok') scSet(key,j);
+  return j;
+}
+
 async function soFetchSchoolData(schoolCode){
   const s=getSession(); const url=getCfg().url; if(!s||!url) return;
   $('soSchoolLoader').style.display='block';
   try{
     const [sd,gc]=await Promise.all([
       fetchSchoolData(url, schoolCode, s.token),
-      fetch(url+'?action=getGradeConfig&token='+encodeURIComponent(s.token)).then(r=>r.json())
+      fetchGradeConfig(url, s.token)
     ]);
     const f1=sd.status==='ok'&&sd.data&&sd.data.form1_school_orientation;
     if(!f1){ $('soNoForm1').style.display='block'; return; }
