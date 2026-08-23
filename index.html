@@ -797,9 +797,9 @@
   </div>
   <div id="soFormContent"></div>
 </main>
-<footer id="footerSO" style="display:none;padding:12px 16px;background:#fff;border-top:1px solid var(--line)">
+<footer id="footerSO" style="display:none">
   <button id="soDraftBtn" class="btn-draft" onclick="saveSoDraft()">Save draft</button>
-  <button id="soSubmitBtn" class="btn-submit" style="border:none;border-radius:12px;padding:14px;font-weight:700;cursor:pointer;width:100%" onclick="submitSessionObs()">Submit Observation</button>
+  <button id="soSubmitBtn" class="btn-submit" onclick="submitSessionObs()">Submit Observation</button>
 </footer>
 
 <!-- INQUI BUDDY SCREEN — Step wizard -->
@@ -1777,7 +1777,7 @@ async function showScreen(which){
     $('sessionObsSessions').style.display='block'; $('hdrTitle').textContent='Unit 1 Session Observations · Sessions';
     renderSOSessions();
   } else if(which==='sessionObsForm'){
-    $('sessionObsForm').style.display='block'; $('footerSO').style.display='block';
+    $('sessionObsForm').style.display='block'; $('footerSO').style.display='flex';
     $('hdrTitle').textContent='Unit 1 Session Observation Form';
     initSessionObsForm();
   }
