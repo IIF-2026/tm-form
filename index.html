@@ -798,6 +798,7 @@
   <div id="soFormContent"></div>
 </main>
 <footer id="footerSO" style="display:none;padding:12px 16px;background:#fff;border-top:1px solid var(--line)">
+  <button id="soDraftBtn" class="btn-draft" onclick="saveSoDraft()">Save draft</button>
   <button id="soSubmitBtn" class="btn-submit" style="border:none;border-radius:12px;padding:14px;font-weight:700;cursor:pointer;width:100%" onclick="submitSessionObs()">Submit Observation</button>
 </footer>
 
@@ -1477,13 +1478,68 @@ function setSession(s){ localStorage.setItem(SESSION_KEY,JSON.stringify(s)); }
 function clearSession(){ localStorage.removeItem(SESSION_KEY); }
 function clearUserData(){
   localStorage.removeItem(DRAFT_KEY);
-  Object.keys(localStorage).filter(k=>k.startsWith('tm_schools_')).forEach(k=>localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k=>k.startsWith('tm_so_draft_')||k.startsWith('tm_schools_')).forEach(k=>localStorage.removeItem(k));
   Object.keys(sessionStorage).filter(k=>k.startsWith('tm_')).forEach(k=>sessionStorage.removeItem(k));
 }
 
 function scGet(key){ try{ return JSON.parse(sessionStorage.getItem(key)); }catch(e){ return null; } }
 function scSet(key,data){ try{ sessionStorage.setItem(key,JSON.stringify(data)); }catch(e){} }
 function scDel(key){ try{ sessionStorage.removeItem(key); }catch(e){} }
+
+/* ============================================================
+   SESSION OBS — DRAFT SAVE / RESTORE
+   ============================================================ */
+function soDraftKey(){
+  return 'tm_so_draft_'+soState.schoolCode+'_L'+soState.level+'_S'+(soState.sessionIndex+1);
+}
+function saveSoDraft(){
+  if(!soState.schoolCode){ toast('No session open.'); return; }
+  localStorage.setItem(soDraftKey(), JSON.stringify(soAnswers));
+  toast('Draft saved ✓');
+}
+function soRestoreDraft(){
+  const raw=localStorage.getItem(soDraftKey()); if(!raw) return;
+  let saved; try{ saved=JSON.parse(raw); }catch(e){ return; }
+  if(!saved||!Object.keys(saved).length) return;
+  Object.assign(soAnswers, saved);
+
+  // Scale buttons: data-name="so_<key>"
+  document.querySelectorAll('.so-scale-btn').forEach(btn=>{
+    const key=btn.dataset.name.replace(/^so_/,'');
+    if(soAnswers[key]!==undefined && String(soAnswers[key])===btn.dataset.val) soScaleClick(btn);
+  });
+
+  // Yes/No buttons (class so-yn): data-name="<key>"
+  document.querySelectorAll('.so-yn').forEach(btn=>{
+    if(soAnswers[btn.dataset.name]!==undefined && soAnswers[btn.dataset.name]===btn.dataset.val) soYNClick(btn);
+  });
+
+  // Option chips: data-opts-group="<key>"
+  document.querySelectorAll('[data-opts-group]').forEach(group=>{
+    const name=group.dataset.optsGroup;
+    const val=soAnswers[name];
+    if(val===undefined||val===''||(Array.isArray(val)&&!val.length)) return;
+    const arr=Array.isArray(val)?val:[val];
+    arr.forEach(v=>{
+      const chip=group.querySelector('.so-opt[data-val="'+v+'"]');
+      if(chip){ if(!chip.classList.contains('selected')) soOptClick(chip); }
+      else {
+        const ob=group.querySelector('.so-opt[data-val="Other"]');
+        if(ob&&!ob.classList.contains('selected')) soOptClick(ob);
+        const oi=document.getElementById('so_'+name+'_other');
+        if(oi){ oi.value=v; soOptSync(name, ob?ob.dataset.multi:'false'); }
+      }
+    });
+  });
+
+  // Textareas and number inputs (id="so_<key>")
+  Object.keys(soAnswers).forEach(key=>{
+    const el=document.getElementById('so_'+key);
+    if(el&&(el.tagName==='TEXTAREA'||el.type==='number'||el.type==='text')) el.value=soAnswers[key]||'';
+  });
+
+  toast('Draft restored ✓ — please re-upload photos');
+}
 
 async function fetchSchoolData(url,code,token){
   const key='tm_sd_'+code;
@@ -5366,6 +5422,7 @@ function renderSessionObsForm(){
   }
 
   $('soFormContent').innerHTML=html;
+  soRestoreDraft();
 }
 
 /* ============================================================
@@ -5540,6 +5597,7 @@ async function submitSessionObs(){
         if(!soState.submittedSessions.includes(submittedSess)) soState.submittedSessions.push(submittedSess);
       }
       scDel('tm_so_'+soState.schoolCode+'_L'+soState.level);
+      localStorage.removeItem(soDraftKey());
       toast('Observation submitted successfully ✓');
       showScreen('sessionObsSessions');
     } else {
