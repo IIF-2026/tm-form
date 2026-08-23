@@ -5223,56 +5223,58 @@ function renderSessionObsForm(){
     soLabel('Q2','What happened because an SL was absent?',true)+
     soOptions('q2',['The teacher ran the session instead','Two groups were combined into one','A Support SL took over the session'],false,true)
   );
-  html+=soLabel('Q3','What did the Support SL do today?',true,'Select the option that best describes their role today.',false);
+  html+=soLabel('Q3','How many students attended the session?',true);
+  html+=`<input type="number" id="${soQ('q3Attendance')}" min="0" inputmode="numeric" style="margin-top:8px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;width:100%;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--navy)" oninput="soSet('q3Attendance',this.value)" placeholder="0">`;
+  html+=soLabel('Q4','What did the Support SL do today?',true,'Select the option that best describes their role today.',false);
   html+=soScale('q3',5,['No Support SL was there','Worked as a normal student in a team','Helped with videos, timing, or managing students','Took full charge because main SL was absent','Something else'],false,5);
-  html+=soLabel('Q4','How much did the Teacher need to step in and help?',true,isIIF?'IIF Observers answer about what you saw.':'Answer about yourself.');
+  html+=soLabel('Q5','How much did the Teacher need to step in and help?',true,isIIF?'IIF Observers answer about what you saw.':'Answer about yourself.');
   html+=soScale('q4',5,['Had to run most of the session','Had to guide the SLs often','Gave a normal, steady amount of support','Helped only a little, when asked','Did not need to help — SLs ran the whole session'],true);
   html+='</div>';
 
   // S2: Video Usage
   html+=soSec('2','Video Usage');
-  html+=soLabel('Q5','Were videos played in the session today?',true);
+  html+=soLabel('Q6','Were videos played in the session today?',true);
   html+=soYesNo('q5',true);
   html+=soConditional('q5','No',
-    soLabel('Q6','Why was no video played today?',true)+
+    soLabel('Q7','Why was no video played today?',true)+
     soOptions('q6',['No internet or power','Not enough time','Problem with the pendrive or IFP screen'],false,true)
   );
   html+=soConditional('q5','Yes',
-    soLabel('Q7','How was the video played?',true)+
+    soLabel('Q8','How was the video played?',true)+
     soOptions('q7',['Pendrive & TV','IFP Panel (smart screen)','YouTube','Phone'],false,true)+
-    soLabel('Q8','Who played the video?',true)+
+    soLabel('Q9','Who played the video?',true)+
     soOptions('q8',['Student Leader','Support SL','Teacher','A student'],true,true)+
-    soLabel('Q9','Were all students able to watch and follow the video together?',true)+
+    soLabel('Q10','Were all students able to watch and follow the video together?',true)+
     soScale('q9',5,['No, a lot of students were left behind','Many students were not able to follow together','Most students followed, but a few fell behind','Almost everyone followed, only one or two fell behind','Yes, every student followed — no one left behind'],false)
   );
   html+='</div>';
 
   // S3: Timing & Pacing
   html+=soSec('3','Timing & Pacing');
-  html+=soLabel('Q10','How well was the timing of the session activities planned?',true);
+  html+=soLabel('Q11','How well was the timing of the session activities planned?',true);
   html+=soScale('q10',5,['Almost all activities could not complete on time','Most activities finished later than planned','Some activities finished close to on time','Most activities finished close to on time','All activities finished right on time'],true);
-  html+=soLabel('Q11','Was there one activity that needed much more help or attention?',true,'If yes, name it and tell us what happened.',false);
+  html+=soLabel('Q12','Was there one activity that needed much more help or attention?',true,'If yes, name it and tell us what happened.',false);
   html+=`<textarea id="${soQ('q11')}" rows="2" style="margin-top:8px" oninput="soSet('q11',this.value)"></textarea>`;
-  html+=soLabel('Q12','What did you use to keep time?',true,'',false);
+  html+=soLabel('Q13','What did you use to keep time?',true,'',false);
   html+=soOptions('q12',['Each SL had their own timer','One shared timer on the table','One stopwatch for the whole class'],true,true);
-  html+=soLabel('Q13','Who was in charge of keeping time?',true,'',false);
+  html+=soLabel('Q14','Who was in charge of keeping time?',true,'',false);
   html+=soOptions('q13',['Teacher','SL','Support SL'],true,true);
   html+='</div>';
 
   // S4: Outcomes (common)
   html+=soSec('4','Outcomes');
-  html+=soLabel('Q14','Please upload photos or videos of students working from today\'s session.',true,'',false);
+  html+=soLabel('Q15','Please upload photos or videos of students working from today\'s session.',true,'',false);
   html+=soMultiFileInput('so_q14','image/*,video/*','Upload session photos / videos');
-  html+=soLabel('Q15','Optional — any suggestions, standout moments, or anything else to share?',false,'',true);
+  html+=soLabel('Q16','Optional — any suggestions, standout moments, or anything else to share?',false,'',true);
   html+=`<textarea id="${soQ('q15')}" rows="3" style="margin-top:8px" oninput="soSet('q15',this.value)" placeholder="• Any suggestions to improve the activity, session, video, timing, or materials?&#10;• Did any student or SL do something that stood out?&#10;• Anything else you'd like to tell us?"></textarea>`;
   html+='</div>';
 
   // S5: Workbook photos (all roles)
   if(SO_TEACHER_UPLOADS[key]){
     html+=soSec('5','Workbook Photos');
-    html+=`<p class="hint" style="margin:0 0 8px">Q16 — Please upload photos of the students' workbook pages listed below. These match today's session.</p>`;
+    html+=`<p class="hint" style="margin:0 0 8px">Q17 — Please upload photos of the students' workbook pages listed below. These match today's session.</p>`;
     SO_TEACHER_UPLOADS[key].forEach((up,i)=>{
-      html+=soLabel('Q16.'+(i+1), up.text, true, '', false);
+      html+=soLabel('Q17.'+(i+1), up.text, true, '', false);
       html+=soMultiFileInput('so_q16_'+(i+1), up.accept, 'Choose files or take photos');
     });
     html+='</div>';
@@ -5282,7 +5284,7 @@ function renderSessionObsForm(){
   if(isIIF){
     // S6: SL Guide
     html+=soSec('IIF','SL Guide Usage');
-    html+=soLabel('Q17','Were the Student Leaders actively using the SL Guide during the session?',true,'',false);
+    html+=soLabel('Q18','Were the Student Leaders actively using the SL Guide during the session?',true,'',false);
     html+=`<div style="display:flex;gap:8px;margin-top:8px">
       <button type="button" class="so-yn" data-name="q17a" data-val="Yes" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">Yes</button>
       <button type="button" class="so-yn" data-name="q17a" data-val="No" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">No</button>
@@ -5342,11 +5344,11 @@ function renderSessionObsForm(){
 
     // S9: Student Leaders
     html+=soSec('IIF','Student Leaders');
-    html+=soLabel('Q18','Which language did the Student Leaders mainly use to explain things?',true,'',false);
+    html+=soLabel('Q19','Which language did the Student Leaders mainly use to explain things?',true,'',false);
     html+=soOptions('q18',['English','Telugu','Both'],false,true);
-    html+=soLabel('Q19','How clearly were the Student Leaders able to explain the activities?',true,'',false);
+    html+=soLabel('Q20','How clearly were the Student Leaders able to explain the activities?',true,'',false);
     html+=soScale('q19',5,['Could not explain clearly at all, students were lost','Explanation was unclear, students often confused','Explained okay, students sometimes needed clarity','Explained clearly, most students understood','Explained very clearly, almost all students understood'],false);
-    html+=soLabel('Q20','Did the Student Leaders use any materials from the MMS kit today?',true,'',false);
+    html+=soLabel('Q21','Did the Student Leaders use any materials from the MMS kit today?',true,'',false);
     html+=soOptions('q20',['Yes','No','Not Applicable'],false,false);
     html+=soConditional('q20','No',
       soLabel('','Why not? Any Feedback:',true)+
@@ -5356,9 +5358,9 @@ function renderSessionObsForm(){
 
     // S10: Standout Moments
     html+=soSec('IIF','Standout Moments & Your Experience');
-    html+=soLabel('Q21','Did any student or SL do something today that stood out or surprised you?',false,'Tell us their name and what they did.',true);
+    html+=soLabel('Q22','Did any student or SL do something today that stood out or surprised you?',false,'Tell us their name and what they did.',true);
     html+=`<textarea id="${soQ('q21')}" rows="2" style="margin-top:8px" oninput="soSet('q21',this.value)"></textarea>`;
-    html+=soLabel('Q22','How was your own experience during today\'s session?',false,'Share anything else you\'d like to tell us.',true);
+    html+=soLabel('Q23','How was your own experience during today\'s session?',false,'Share anything else you\'d like to tell us.',true);
     html+=`<textarea id="${soQ('q22')}" rows="2" style="margin-top:8px" oninput="soSet('q22',this.value)"></textarea>`;
     html+='</div>';
   }
@@ -5386,39 +5388,40 @@ async function submitSessionObs(){
   if(!soAnswers['q1']){ toast('Attendance: Please answer Q1 — were all SLs present today?'); return; }
   if(soAnswers['q1']==='No' && !soAnswers['q2']){ toast('Attendance: Please answer Q2 — what happened because an SL was absent?'); return; }
   if(soAnswers['q1']==='No' && !soOtherFilled('q2')){ toast('Attendance: Please specify what happened (Q2 "Other").'); return; }
-  if(!soAnswers['q3']){ toast('Attendance: Please answer Q3 — what did the Support SL do today?'); return; }
-  if(soAnswers['q3']==='5'){ toast('Attendance: Please describe what the Support SL did (Q3 "Something else").'); return; }
-  if(!soAnswers['q4']){ toast('Attendance: Please answer Q4 — how much did the teacher step in?'); return; }
-  if(!soAnswers['q5']){ toast('Video: Please answer Q5 — were videos played today?'); return; }
-  if(soAnswers['q5']==='No' && !soAnswers['q6']){ toast('Video: Please answer Q6 — why was no video played today?'); return; }
-  if(soAnswers['q5']==='No' && !soOtherFilled('q6')){ toast('Video: Please specify why the video wasn\'t played (Q6 "Other").'); return; }
+  if(soAnswers['q3Attendance']===''||soAnswers['q3Attendance']===undefined||soAnswers['q3Attendance']===null){ toast('Attendance: Please answer Q3 — how many students attended the session?'); return; }
+  if(!soAnswers['q3']){ toast('Attendance: Please answer Q4 — what did the Support SL do today?'); return; }
+  if(soAnswers['q3']==='5'){ toast('Attendance: Please describe what the Support SL did (Q4 "Something else").'); return; }
+  if(!soAnswers['q4']){ toast('Attendance: Please answer Q5 — how much did the teacher step in?'); return; }
+  if(!soAnswers['q5']){ toast('Video: Please answer Q6 — were videos played today?'); return; }
+  if(soAnswers['q5']==='No' && !soAnswers['q6']){ toast('Video: Please answer Q7 — why was no video played today?'); return; }
+  if(soAnswers['q5']==='No' && !soOtherFilled('q6')){ toast('Video: Please specify why the video wasn\'t played (Q7 "Other").'); return; }
   if(soAnswers['q5']==='Yes'){
-    if(!soAnswers['q7']){ toast('Video: Please answer Q7 — how was the video played?'); return; }
-    if(!soOtherFilled('q7')){ toast('Video: Please specify how the video was played (Q7 "Other").'); return; }
-    if(!(soAnswers['q8']&&soAnswers['q8'].length)){ toast('Video: Please answer Q8 — who played the video?'); return; }
-    if(!soOtherFilled('q8')){ toast('Video: Please specify who played the video (Q8 "Other").'); return; }
-    if(!soAnswers['q9']){ toast('Video: Please answer Q9 — could students follow the video?'); return; }
+    if(!soAnswers['q7']){ toast('Video: Please answer Q8 — how was the video played?'); return; }
+    if(!soOtherFilled('q7')){ toast('Video: Please specify how the video was played (Q8 "Other").'); return; }
+    if(!(soAnswers['q8']&&soAnswers['q8'].length)){ toast('Video: Please answer Q9 — who played the video?'); return; }
+    if(!soOtherFilled('q8')){ toast('Video: Please specify who played the video (Q9 "Other").'); return; }
+    if(!soAnswers['q9']){ toast('Video: Please answer Q10 — could students follow the video?'); return; }
   }
-  if(!soAnswers['q10']){ toast('Timing: Please answer Q10 — how was the session timing?'); return; }
-  if(!soAnswers['q11']||!soAnswers['q11'].trim()){ toast('Timing: Please answer Q11 — which activity needed the most help?'); return; }
-  if(!(soAnswers['q12']&&soAnswers['q12'].length)){ toast('Timing: Please answer Q12 — what did you use to keep time?'); return; }
-  if(!soOtherFilled('q12')){ toast('Timing: Please specify what you used to keep time (Q12 "Other").'); return; }
-  if(!(soAnswers['q13']&&soAnswers['q13'].length)){ toast('Timing: Please answer Q13 — who was in charge of keeping time?'); return; }
-  if(!soOtherFilled('q13')){ toast('Timing: Please specify who was in charge of keeping time (Q13 "Other").'); return; }
-  if(!soPhotos['so_q14']){ toast('Outcomes: Please upload at least one photo or video (Q14).'); return; }
+  if(!soAnswers['q10']){ toast('Timing: Please answer Q11 — how was the session timing?'); return; }
+  if(!soAnswers['q11']||!soAnswers['q11'].trim()){ toast('Timing: Please answer Q12 — which activity needed the most help?'); return; }
+  if(!(soAnswers['q12']&&soAnswers['q12'].length)){ toast('Timing: Please answer Q13 — what did you use to keep time?'); return; }
+  if(!soOtherFilled('q12')){ toast('Timing: Please specify what you used to keep time (Q13 "Other").'); return; }
+  if(!(soAnswers['q13']&&soAnswers['q13'].length)){ toast('Timing: Please answer Q14 — who was in charge of keeping time?'); return; }
+  if(!soOtherFilled('q13')){ toast('Timing: Please specify who was in charge of keeping time (Q14 "Other").'); return; }
+  if(!soPhotos['so_q14']){ toast('Outcomes: Please upload at least one photo or video (Q15).'); return; }
   const isSchool=(soState.role==='school');
   const key16=soState.level+'_'+(soState.sessionIndex+1);
   if(SO_TEACHER_UPLOADS[key16]){
     for(let i=0;i<SO_TEACHER_UPLOADS[key16].length;i++){
       const files=soPhotos['so_q16_'+(i+1)];
-      if(!files||!files.length){ toast('Workbook Photos: Please upload at least one photo for Q16.'+(i+1)+'.'); return; }
+      if(!files||!files.length){ toast('Workbook Photos: Please upload at least one photo for Q17.'+(i+1)+'.'); return; }
     }
   }
   if(isIIF){
     const missingSQ=['sq1','sq2','sq3','sq4'].filter(k=>!soAnswers[k]);
     if(missingSQ.length){ toast('Session Questions: Please complete all four rating questions (SQ1–SQ4).'); return; }
-    if(!soAnswers['q17a']){ toast('SL Guide: Please answer Q17 — were SLs using the SL Guide?'); return; }
-    if(!soAnswers['q17b']||!soAnswers['q17b'].trim()){ toast('SL Guide: Please fill Q17b — what worked well and what could be better?'); return; }
+    if(!soAnswers['q17a']){ toast('SL Guide: Please answer Q18 — were SLs using the SL Guide?'); return; }
+    if(!soAnswers['q17b']||!soAnswers['q17b'].trim()){ toast('SL Guide: Please fill Q18b — what worked well and what could be better?'); return; }
     const lvlV=soState.level, sessV=soState.sessionIndex+1;
     const naListV=(SO_ACTIVITY_NA[lvlV+'_'+sessV]||[6]);
     for(let actV=1;actV<=5;actV++){
@@ -5441,10 +5444,10 @@ async function submitSessionObs(){
       if(!soAnswers['sq5']){ toast('Session Questions: Please answer SQ5 — how well did students understand the focus skill?'); return; }
       if(!soAnswers['sq6']||!soAnswers['sq6'].trim()){ toast('Session Questions: Please fill SQ6 — describe what you saw.'); return; }
     }
-    if(!soAnswers['q18']){ toast('Student Leaders: Please answer Q18 — which language did SLs use?'); return; }
-    if(!soOtherFilled('q18')){ toast('Student Leaders: Please specify the language used (Q18 "Other").'); return; }
-    if(!soAnswers['q19']){ toast('Student Leaders: Please answer Q19 — how clearly did SLs explain?'); return; }
-    if(!soAnswers['q20']){ toast('Student Leaders: Please answer Q20 — did SLs use the MMS kit?'); return; }
+    if(!soAnswers['q18']){ toast('Student Leaders: Please answer Q19 — which language did SLs use?'); return; }
+    if(!soOtherFilled('q18')){ toast('Student Leaders: Please specify the language used (Q19 "Other").'); return; }
+    if(!soAnswers['q19']){ toast('Student Leaders: Please answer Q20 — how clearly did SLs explain?'); return; }
+    if(!soAnswers['q20']){ toast('Student Leaders: Please answer Q21 — did SLs use the MMS kit?'); return; }
     if(soAnswers['q20']==='No' && !soAnswers['q20_feedback']){ toast('Student Leaders: Please explain why the MMS kit was not used.'); return; }
   }
 
@@ -5508,7 +5511,7 @@ async function submitSessionObs(){
         grade:soState.grade, schoolTrack:soState.schoolTrack, date:new Date().toLocaleDateString('en-IN')
       },
       common:{
-        q1:soAnswers.q1||'', q2:soAnswers.q2||'', q3:soAnswers.q3||'', q4:soAnswers.q4||'',
+        q1:soAnswers.q1||'', q2:soAnswers.q2||'', q3Attendance:Number(soAnswers.q3Attendance)||'', q3:soAnswers.q3||'', q4:soAnswers.q4||'',
         q5:soAnswers.q5||'', q6:soAnswers.q6||'', q7:soAnswers.q7||'', q8:soAnswers.q8||[], q9:soAnswers.q9||'',
         q10:soAnswers.q10||'', q11:soAnswers.q11||'', q12:soAnswers.q12||[], q13:soAnswers.q13||'',
         q14Photos, q15:soAnswers.q15||''

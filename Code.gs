@@ -2377,13 +2377,13 @@ var SO_COLUMNS = [
   'Submission ID','Submitted At','Submitted By','Form Version','Status',
   'Partner','School','School Code','School Track','Role','Your Name',
   'Level','Grade','Unit','Session Name','Date',
-  'Q1 SLs Present','Q2 SL Absent Reason',
-  'Q3 Support SL Role','Q4 Teacher Involvement',
-  'Q5 Videos Played','Q6 No Video Reason','Q7 Video Method','Q8 Video Played By','Q9 Students Follow Video',
-  'Q10 Timing','Q11 Attention Activity','Q12 Timer Used','Q13 Time Keeper',
-  'Q14 Session Photos','Q15 Optional Feedback',
-  'Q16 Workbook Photos',
-  'Q17a SL Guide Used','Q17b SL Guide Feedback',
+  'Q1 SLs Present','Q2 SL Absent Reason','Q3 Students Attended',
+  'Q4 Support SL Role','Q5 Teacher Involvement',
+  'Q6 Videos Played','Q7 No Video Reason','Q8 Video Method','Q9 Video Played By','Q10 Students Follow Video',
+  'Q11 Timing','Q12 Attention Activity','Q13 Timer Used','Q14 Time Keeper',
+  'Q15 Session Photos','Q16 Optional Feedback',
+  'Q17 Workbook Photos',
+  'Q18a SL Guide Used','Q18b SL Guide Feedback',
   'Session Q1 Engagement','Session Q2 Understanding','Session Q3 Completion','Session Q4 Support',
   'Session Q5 Focus Skill','Session Q6 Focus Skill Desc',
   'Activity 1 Q1','Activity 1 Q2','Activity 1 Q3',
@@ -2391,9 +2391,9 @@ var SO_COLUMNS = [
   'Activity 3 Q1','Activity 3 Q2','Activity 3 Q3','Activity 3 Q4',
   'Activity 4 Q1','Activity 4 Q2','Activity 4 Q3',
   'Activity 5 Q1','Activity 5 Q2','Activity 5 Q3','Activity 5 Q4',
-  'Q18 SL Language','Q19 SL Clarity',
-  'Q20 MMS Kit','Q20 MMS Kit Feedback',
-  'Q21 Standout','Q22 Experience'
+  'Q19 SL Language','Q20 SL Clarity',
+  'Q21 MMS Kit','Q21 MMS Kit Feedback',
+  'Q22 Standout','Q23 Experience'
 ];
 
 function updatePartnerSessionObsSheetId(ss, partnerName, sheetId) {
@@ -2468,22 +2468,23 @@ function buildRowSessionObs(payload) {
     'Date': h.date || '',
     'Q1 SLs Present': c.q1 || '',
     'Q2 SL Absent Reason': c.q2 || '',
-    'Q3 Support SL Role': c.q3 || '',
-    'Q4 Teacher Involvement': c.q4 || '',
-    'Q5 Videos Played': c.q5 || '',
-    'Q6 No Video Reason': c.q6 || '',
-    'Q7 Video Method': c.q7 || '',
-    'Q8 Video Played By': Array.isArray(c.q8) ? c.q8.join(', ') : (c.q8 || ''),
-    'Q9 Students Follow Video': c.q9 || '',
-    'Q10 Timing': c.q10 || '',
-    'Q11 Attention Activity': c.q11 || '',
-    'Q12 Timer Used': Array.isArray(c.q12) ? c.q12.join(', ') : (c.q12 || ''),
-    'Q13 Time Keeper': Array.isArray(c.q13) ? c.q13.join(', ') : (c.q13 || ''),
-    'Q14 Session Photos': '',
-    'Q15 Optional Feedback': c.q15 || '',
-    'Q16 Workbook Photos': '',
-    'Q17a SL Guide Used': iif.q17a || '',
-    'Q17b SL Guide Feedback': iif.q17b || '',
+    'Q3 Students Attended': Number(c.q3Attendance) || '',
+    'Q4 Support SL Role': c.q3 || '',
+    'Q5 Teacher Involvement': c.q4 || '',
+    'Q6 Videos Played': c.q5 || '',
+    'Q7 No Video Reason': c.q6 || '',
+    'Q8 Video Method': c.q7 || '',
+    'Q9 Video Played By': Array.isArray(c.q8) ? c.q8.join(', ') : (c.q8 || ''),
+    'Q10 Students Follow Video': c.q9 || '',
+    'Q11 Timing': c.q10 || '',
+    'Q12 Attention Activity': c.q11 || '',
+    'Q13 Timer Used': Array.isArray(c.q12) ? c.q12.join(', ') : (c.q12 || ''),
+    'Q14 Time Keeper': Array.isArray(c.q13) ? c.q13.join(', ') : (c.q13 || ''),
+    'Q15 Session Photos': '',
+    'Q16 Optional Feedback': c.q15 || '',
+    'Q17 Workbook Photos': '',
+    'Q18a SL Guide Used': iif.q17a || '',
+    'Q18b SL Guide Feedback': iif.q17b || '',
     'Session Q1 Engagement': sq.sq1 || '',
     'Session Q2 Understanding': sq.sq2 || '',
     'Session Q3 Completion': sq.sq3 || '',
@@ -2507,12 +2508,12 @@ function buildRowSessionObs(payload) {
     'Activity 5 Q2': (acts['5'] && acts['5'].q2) || '',
     'Activity 5 Q3': (acts['5'] && acts['5'].q3) || '',
     'Activity 5 Q4': (acts['5'] && acts['5'].q4) || '',
-    'Q18 SL Language': iif.q18 || '',
-    'Q19 SL Clarity': iif.q19 || '',
-    'Q20 MMS Kit': iif.q20 || '',
-    'Q20 MMS Kit Feedback': iif.q20Feedback || '',
-    'Q21 Standout': iif.q21 || '',
-    'Q22 Experience': iif.q22 || ''
+    'Q19 SL Language': iif.q18 || '',
+    'Q20 SL Clarity': iif.q19 || '',
+    'Q21 MMS Kit': iif.q20 || '',
+    'Q21 MMS Kit Feedback': iif.q20Feedback || '',
+    'Q22 Standout': iif.q21 || '',
+    'Q23 Experience': iif.q22 || ''
   };
   return SO_COLUMNS.map(function(col) { return row[col] !== undefined ? row[col] : ''; });
 }
@@ -2590,7 +2591,7 @@ function handleSessionObsSubmit(payload) {
     var url = uploadFile(photo, schoolCode + '_S' + session + '_' + (idx+1) + '.jpg', sessionPhotosFolder);
     if (url) q14Urls.push(url);
   });
-  if (q14Urls.length) updateSOPhotoUrl(tab, sid, 'Q14 Session Photos', q14Urls.join(', '));
+  if (q14Urls.length) updateSOPhotoUrl(tab, sid, 'Q15 Session Photos', q14Urls.join(', '));
   var q16Files = (payload.teacher || {}).q16Files || [];
   var q16Urls = [];
   q16Files.forEach(function(fp) {
@@ -2600,7 +2601,7 @@ function handleSessionObsSubmit(payload) {
     if (url) q16Urls.push(url);
   });
   if (q16Urls.length) {
-    updateSOPhotoUrl(tab, sid, 'Q16 Workbook Photos', q16Urls.join(', '));
+    updateSOPhotoUrl(tab, sid, 'Q17 Workbook Photos', q16Urls.join(', '));
   }
   // IIF activity photo uploads
   var iif = payload.iif || {};
