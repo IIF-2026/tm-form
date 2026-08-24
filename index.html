@@ -1918,15 +1918,24 @@ function showSchoolMenu(){
 /* ============================================================
    SCHOOL DASHBOARD SUMMARY SCREEN
    ============================================================ */
+let _sdsLastCode='', _sdsLastPartner='', _sdsLastTrack='';
+
 async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrack){
   const s=getSession(); if(!s) return;
-  const code=overrideCode||s.schoolCode;
   const url=getCfg().url; if(!url) return;
   if(!SCHOOLS.length) await loadSchools();
+
+  // Persist selection so back-navigation reloads the correct school
+  if(overrideCode!==undefined){
+    _sdsLastCode=overrideCode||'';
+    _sdsLastPartner=overridePartner||'';
+    _sdsLastTrack=overrideTrack||'';
+  }
+  const code=_sdsLastCode||(s.schoolCode||'');
   const _sch=SCHOOLS.find(x=>x.code===code);
   const schoolName=_sch?_sch.name:(code||'Your School');
-  const partner=overridePartner!==undefined?overridePartner:(_sch?_sch.partner:'');
-  const schoolTrack=overrideTrack!==undefined?overrideTrack:(_sch?(_sch.schoolTrack||''):'');
+  const partner=_sdsLastCode?_sdsLastPartner:(_sch?_sch.partner:'');
+  const schoolTrack=_sdsLastCode?_sdsLastTrack:(_sch?(_sch.schoolTrack||''):'');
 
   // Avatar: initials from school code
   const initials=(code||'??').substring(0,2).toUpperCase();
@@ -1934,9 +1943,10 @@ async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrac
   $('sdsSchoolName').textContent=schoolName;
   $('sdsSchoolMeta').textContent=(partner?partner+' · ':'')+' Code '+code;
 
-  // Grade chips — use global sdData for School role, otherwise fetch
+  // Use cached sdData for School role only when it belongs to the same school
   let grades=[];
-  if(!overrideCode&&sdData&&sdData.form1_school_orientation){
+  const canUseCache=!_sdsLastCode&&sdData&&sdData.form1_school_orientation;
+  if(canUseCache){
     grades=String(sdData.form1_school_orientation['Grades']||'').split(',').map(g=>g.trim()).filter(Boolean);
     $('sdsGradeChips').innerHTML=grades.map(g=>`<span class="chip" style="cursor:default">Grade ${g}</span>`).join('');
   } else {
@@ -1949,12 +1959,12 @@ async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrac
 
   try{
     const fetches=[fetchForm3Subs(url,code,s.token), fetchGradeConfig(url,s.token)];
-    if(overrideCode) fetches.push(fetchSchoolData(url,code,s.token));
+    if(!canUseCache) fetches.push(fetchSchoolData(url,code,s.token));
     const results=await Promise.all(fetches);
     const [f3Result, gcResult, sdResult]=results;
 
-    // Grades from fetched school data when called from IIF
-    if(overrideCode&&sdResult&&sdResult.status==='ok'&&sdResult.data&&sdResult.data.form1_school_orientation){
+    // Populate grades from fetched school data when not using sdData cache
+    if(!canUseCache&&sdResult&&sdResult.status==='ok'&&sdResult.data&&sdResult.data.form1_school_orientation){
       grades=String(sdResult.data.form1_school_orientation['Grades']||'').split(',').map(g=>g.trim()).filter(Boolean);
       $('sdsGradeChips').innerHTML=grades.map(g=>`<span class="chip" style="cursor:default">Grade ${g}</span>`).join('');
     }
@@ -2063,6 +2073,7 @@ function renderSdsProgress(grades, cfgMap, soResults){
    IIF SCHOOL DASHBOARD PICKER
    ============================================================ */
 function initIifSchoolDashPicker(){
+  _sdsLastCode=''; _sdsLastPartner=''; _sdsLastTrack='';
   if(!SCHOOLS.length) loadSchools().then(populateSdsPartners);
   else populateSdsPartners();
   $('sdsSchool').innerHTML='<option value="">Select partner first…</option>';
