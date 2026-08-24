@@ -632,6 +632,18 @@
   <button onclick="showScreen('sessionObsHome')" style="width:100%;padding:16px;background:var(--blue);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:14px">Go to Session Observation forms</button>
 </main>
 
+<!-- IIF SCHOOL DASHBOARD PICKER -->
+<main id="iifSchoolDashPicker" style="display:none">
+  <div class="card">
+    <div class="sec-title" style="margin-bottom:12px"><span class="tag">Step 1</span> Select School</div>
+    <label>Partner</label>
+    <select id="sdsPartner" onchange="sdsOnPartnerChange()" style="margin-bottom:12px"><option value="">Select partner…</option></select>
+    <label>School</label>
+    <select id="sdsSchool" onchange="sdsOnSchoolChange()"><option value="">Select partner first…</option></select>
+  </div>
+  <button id="sdsNextBtn" class="btn-submit" disabled onclick="sdsOnView()" style="width:100%;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:14px">View Dashboard →</button>
+</main>
+
 <!-- IIF AGGREGATE DASHBOARD -->
 <main id="iifDash" style="display:none">
   <div class="card">
@@ -1693,7 +1705,7 @@ async function bootAfterLogin(){
 /* ============================================================
    SCREEN NAVIGATION (role-aware)
    ============================================================ */
-const ALL_SCREENS = ['home','app','app2','app3','app4','app5','schoolDash','schoolDashSummaryScreen','iifDash','trackerScreen','adminUsers','adminPerms','buddyScreen','buddyEvalScreen','buddyOverviewScreen','schoolBuddyScreen','sessionObsHome','sessionObsUnits','sessionObsSessions','sessionObsForm'];
+const ALL_SCREENS = ['home','app','app2','app3','app4','app5','schoolDash','schoolDashSummaryScreen','iifSchoolDashPicker','iifDash','trackerScreen','adminUsers','adminPerms','buddyScreen','buddyEvalScreen','buddyOverviewScreen','schoolBuddyScreen','sessionObsHome','sessionObsUnits','sessionObsSessions','sessionObsForm'];
 const ALL_FOOTERS = ['footer1','footer2','footer3','footer4','footer5','footerSO'];
 function hideAllScreens(){
   ALL_SCREENS.forEach(id=>{ const el=$(id); if(el) el.style.display='none'; });
@@ -1706,7 +1718,8 @@ const MENU_ITEMS = [
   { id:'form3', title:'Students Count Info',       perm:'form3',      icon:'👥' },
   { id:'form4', title:'SL Selection Assessment',   perm:'form4',      icon:'⭐' },
   { id:'form5', title:'Kits Handover Info',        perm:'form5',      icon:'📦' },
-  { id:'iifDash',      title:'School Dashboard',            perm:'iifDash',    icon:'🏫' },
+  { id:'iifSchoolDashPicker', title:'School Dashboard',       perm:'sessionObs', icon:'📊' },
+  { id:'iifDash',      title:'All Schools Dashboard',       perm:'iifDash',    icon:'🏫' },
   { id:'trackerScreen',title:'Form Completion Tracker',     perm:'tracker',    icon:'✅' },
   { id:'adminUsers',   title:'Admin · User Management',     perm:'adminPanel', icon:'👤' },
   { id:'adminPerms',   title:'Admin · Grade Configuration',  perm:'adminPanel', icon:'📊' },
@@ -1774,6 +1787,9 @@ async function showScreen(which){
   } else if(which==='schoolDashSummaryScreen'){
     $('schoolDashSummaryScreen').style.display='block'; $('hdrTitle').textContent='School Dashboard';
     loadSchoolDashSummary();
+  } else if(which==='iifSchoolDashPicker'){
+    $('iifSchoolDashPicker').style.display='block'; $('hdrTitle').textContent='School Dashboard';
+    initIifSchoolDashPicker();
   } else if(which==='iifDash'){
     $('iifDash').style.display='block'; $('hdrTitle').textContent='All Schools Dashboard';
     loadIIFDashboard();
@@ -1902,15 +1918,15 @@ function showSchoolMenu(){
 /* ============================================================
    SCHOOL DASHBOARD SUMMARY SCREEN
    ============================================================ */
-async function loadSchoolDashSummary(){
+async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrack){
   const s=getSession(); if(!s) return;
-  const code=s.schoolCode;
+  const code=overrideCode||s.schoolCode;
   const url=getCfg().url; if(!url) return;
   if(!SCHOOLS.length) await loadSchools();
   const _sch=SCHOOLS.find(x=>x.code===code);
   const schoolName=_sch?_sch.name:(code||'Your School');
-  const partner=_sch?_sch.partner:'';
-  const schoolTrack=_sch?(_sch.schoolTrack||''):'';
+  const partner=overridePartner!==undefined?overridePartner:(_sch?_sch.partner:'');
+  const schoolTrack=overrideTrack!==undefined?overrideTrack:(_sch?(_sch.schoolTrack||''):'');
 
   // Avatar: initials from school code
   const initials=(code||'??').substring(0,2).toUpperCase();
@@ -1918,21 +1934,30 @@ async function loadSchoolDashSummary(){
   $('sdsSchoolName').textContent=schoolName;
   $('sdsSchoolMeta').textContent=(partner?partner+' · ':'')+' Code '+code;
 
-  // Grade chips from already-loaded sdData
-  const grades=sdData&&sdData.form1_school_orientation
-    ? String(sdData.form1_school_orientation['Grades']||'').split(',').map(g=>g.trim()).filter(Boolean)
-    : [];
-  $('sdsGradeChips').innerHTML=grades.map(g=>`<span class="chip" style="cursor:default">Grade ${g}</span>`).join('');
+  // Grade chips — use global sdData for School role, otherwise fetch
+  let grades=[];
+  if(!overrideCode&&sdData&&sdData.form1_school_orientation){
+    grades=String(sdData.form1_school_orientation['Grades']||'').split(',').map(g=>g.trim()).filter(Boolean);
+    $('sdsGradeChips').innerHTML=grades.map(g=>`<span class="chip" style="cursor:default">Grade ${g}</span>`).join('');
+  } else {
+    $('sdsGradeChips').innerHTML='<span style="font-size:12px;color:var(--muted)">Loading grades…</span>';
+  }
 
   // Loading placeholders
   $('sdsSectionTable').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p>';
   $('sdsProgressBody').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p>';
 
   try{
-    const [f3Result, gcResult]=await Promise.all([
-      fetchForm3Subs(url, code, s.token),
-      fetchGradeConfig(url, s.token)
-    ]);
+    const fetches=[fetchForm3Subs(url,code,s.token), fetchGradeConfig(url,s.token)];
+    if(overrideCode) fetches.push(fetchSchoolData(url,code,s.token));
+    const results=await Promise.all(fetches);
+    const [f3Result, gcResult, sdResult]=results;
+
+    // Grades from fetched school data when called from IIF
+    if(overrideCode&&sdResult&&sdResult.status==='ok'&&sdResult.data&&sdResult.data.form1_school_orientation){
+      grades=String(sdResult.data.form1_school_orientation['Grades']||'').split(',').map(g=>g.trim()).filter(Boolean);
+      $('sdsGradeChips').innerHTML=grades.map(g=>`<span class="chip" style="cursor:default">Grade ${g}</span>`).join('');
+    }
 
     // Section-wise table
     const submissions=f3Result.status==='ok'?(f3Result.submissions||[]):[];
@@ -2032,6 +2057,45 @@ function renderSdsProgress(grades, cfgMap, soResults){
     </div>`;
   }).join('');
   $('sdsProgressBody').innerHTML=html;
+}
+
+/* ============================================================
+   IIF SCHOOL DASHBOARD PICKER
+   ============================================================ */
+function initIifSchoolDashPicker(){
+  if(!SCHOOLS.length) loadSchools().then(populateSdsPartners);
+  else populateSdsPartners();
+  $('sdsSchool').innerHTML='<option value="">Select partner first…</option>';
+  $('sdsNextBtn').disabled=true;
+}
+
+function populateSdsPartners(){
+  const partners=[...new Set(SCHOOLS.map(x=>x.partner).filter(Boolean))].sort();
+  $('sdsPartner').innerHTML='<option value="">Select partner…</option>'
+    +partners.map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+
+function sdsOnPartnerChange(){
+  const p=$('sdsPartner').value;
+  $('sdsNextBtn').disabled=true;
+  if(!p){ $('sdsSchool').innerHTML='<option value="">Select partner first…</option>'; return; }
+  const list=SCHOOLS.filter(s=>s.partner===p).sort((a,b)=>a.name.localeCompare(b.name));
+  $('sdsSchool').innerHTML='<option value="">Select school…</option>'
+    +list.map(s=>`<option value="${s.name}" data-code="${s.code}" data-track="${s.schoolTrack||''}">${s.name}</option>`).join('');
+}
+
+function sdsOnSchoolChange(){
+  const opt=$('sdsSchool').selectedOptions[0];
+  $('sdsNextBtn').disabled=!opt||!opt.dataset.code;
+}
+
+function sdsOnView(){
+  const opt=$('sdsSchool').selectedOptions[0]; if(!opt||!opt.dataset.code) return;
+  const code=opt.dataset.code;
+  const partner=$('sdsPartner').value;
+  const track=opt.dataset.track||'';
+  showScreen('schoolDashSummaryScreen');
+  loadSchoolDashSummary(code, partner, track);
 }
 
 function openSchoolForm(which){
