@@ -593,6 +593,11 @@
     <div class="sec-title"><span class="tag">School</span> <span id="sdSchoolName">Your School</span></div>
     <p class="hint" style="margin:0">Your school's submitted data. Contact IIF for updates.</p>
   </div>
+  <div id="sdDashCard" class="card" style="display:none;cursor:pointer;text-align:center;padding:20px" onclick="showScreen('schoolDashSummaryScreen')">
+    <div style="font-size:28px;margin-bottom:6px">📊</div>
+    <div style="font-weight:700;font-size:16px;color:var(--navy)">School Dashboard</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px">School identity &amp; progress summary</div>
+  </div>
   <div id="sdSessionObsCard" class="card" style="display:none;cursor:pointer;text-align:center;padding:20px" onclick="showScreen('sessionObsHome')">
     <div style="font-size:28px;margin-bottom:6px">👁</div>
     <div style="font-weight:700;font-size:16px;color:var(--navy)">Unit 1 Session Observations</div>
@@ -604,6 +609,27 @@
     <div style="font-weight:700;font-size:16px;color:var(--navy)">Inqui Buddy</div>
     <div style="font-size:13px;color:var(--muted);margin-top:4px">Innovation Evaluator</div>
   </div>
+</main>
+
+<!-- SCHOOL DASHBOARD SUMMARY SCREEN -->
+<main id="schoolDashSummaryScreen" style="display:none">
+  <div class="card" id="sdsSchoolCard" style="display:flex;align-items:flex-start;gap:14px">
+    <div id="sdsAvatar" style="flex-shrink:0;width:48px;height:48px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;letter-spacing:.5px"></div>
+    <div style="flex:1;min-width:0">
+      <div id="sdsSchoolName" style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:2px"></div>
+      <div id="sdsSchoolMeta" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
+      <div id="sdsGradeChips" class="chips"></div>
+    </div>
+  </div>
+  <div class="card" id="sdsSectionTableCard">
+    <div class="sec-title" style="margin-bottom:10px"><span class="tag">Summary</span> Sectionwise summary</div>
+    <div id="sdsSectionTable"><p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p></div>
+  </div>
+  <div class="card" id="sdsProgressCard">
+    <div class="sec-title" style="margin-bottom:10px"><span class="tag">Progress</span> Unit 1 progress &middot; 6 sessions per grade</div>
+    <div id="sdsProgressBody"><p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p></div>
+  </div>
+  <button onclick="showScreen('sessionObsHome')" style="width:100%;padding:16px;background:var(--blue);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:14px">Go to Session Observation forms</button>
 </main>
 
 <!-- IIF AGGREGATE DASHBOARD -->
@@ -1667,7 +1693,7 @@ async function bootAfterLogin(){
 /* ============================================================
    SCREEN NAVIGATION (role-aware)
    ============================================================ */
-const ALL_SCREENS = ['home','app','app2','app3','app4','app5','schoolDash','iifDash','trackerScreen','adminUsers','adminPerms','buddyScreen','buddyEvalScreen','buddyOverviewScreen','schoolBuddyScreen','sessionObsHome','sessionObsUnits','sessionObsSessions','sessionObsForm'];
+const ALL_SCREENS = ['home','app','app2','app3','app4','app5','schoolDash','schoolDashSummaryScreen','iifDash','trackerScreen','adminUsers','adminPerms','buddyScreen','buddyEvalScreen','buddyOverviewScreen','schoolBuddyScreen','sessionObsHome','sessionObsUnits','sessionObsSessions','sessionObsForm'];
 const ALL_FOOTERS = ['footer1','footer2','footer3','footer4','footer5','footerSO'];
 function hideAllScreens(){
   ALL_SCREENS.forEach(id=>{ const el=$(id); if(el) el.style.display='none'; });
@@ -1745,6 +1771,9 @@ async function showScreen(which){
     $('schoolDash').style.display='block'; $('hdrTitle').textContent='My School Dashboard';
     $('sdBuddyCard').style.display='none';
     loadSchoolDashboard();
+  } else if(which==='schoolDashSummaryScreen'){
+    $('schoolDashSummaryScreen').style.display='block'; $('hdrTitle').textContent='School Dashboard';
+    loadSchoolDashSummary();
   } else if(which==='iifDash'){
     $('iifDash').style.display='block'; $('hdrTitle').textContent='All Schools Dashboard';
     loadIIFDashboard();
@@ -1828,6 +1857,7 @@ function showSchoolMenu(){
   $('homeBtn').style.display='none';
   $('sdBuddyCard').style.display='none';
   $('sdSessionObsCard').style.display='none';
+  $('sdDashCard').style.display='none';
   const btnBase='display:block;width:100%;text-align:left;margin-bottom:12px;padding:18px 16px;'
     +'border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;color:var(--navy)';
   const btnSubmitted=btnBase+';background:#fff;border:1px solid var(--line)';
@@ -1860,14 +1890,148 @@ function showSchoolMenu(){
     </button>`;
   });
   if(hasPerm('buddy')){
-  }
-  if(hasPerm('buddy')){
     $('sdBuddyCard').style.display='block';
   }
   if(hasPerm('sessionObs')){
     $('sdSessionObsCard').style.display='block';
+    $('sdDashCard').style.display='block';
   }
   $('sdContent').innerHTML=html;
+}
+
+/* ============================================================
+   SCHOOL DASHBOARD SUMMARY SCREEN
+   ============================================================ */
+async function loadSchoolDashSummary(){
+  const s=getSession(); if(!s) return;
+  const code=s.schoolCode;
+  const url=getCfg().url; if(!url) return;
+  if(!SCHOOLS.length) await loadSchools();
+  const _sch=SCHOOLS.find(x=>x.code===code);
+  const schoolName=_sch?_sch.name:(code||'Your School');
+  const partner=_sch?_sch.partner:'';
+  const schoolTrack=_sch?(_sch.schoolTrack||''):'';
+
+  // Avatar: initials from school code
+  const initials=(code||'??').substring(0,2).toUpperCase();
+  $('sdsAvatar').textContent=initials;
+  $('sdsSchoolName').textContent=schoolName;
+  $('sdsSchoolMeta').textContent=(partner?partner+' · ':'')+' Code '+code;
+
+  // Grade chips from already-loaded sdData
+  const grades=sdData&&sdData.form1_school_orientation
+    ? String(sdData.form1_school_orientation['Grades']||'').split(',').map(g=>g.trim()).filter(Boolean)
+    : [];
+  $('sdsGradeChips').innerHTML=grades.map(g=>`<span class="chip" style="cursor:default">Grade ${g}</span>`).join('');
+
+  // Loading placeholders
+  $('sdsSectionTable').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p>';
+  $('sdsProgressBody').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p>';
+
+  try{
+    const [f3Result, gcResult]=await Promise.all([
+      fetchForm3Subs(url, code, s.token),
+      fetchGradeConfig(url, s.token)
+    ]);
+
+    // Section-wise table
+    const submissions=f3Result.status==='ok'?(f3Result.submissions||[]):[];
+    renderSdsSectionTable(submissions);
+
+    // Grade → level map (respecting partner/track filters)
+    const cfgMap={};
+    if(gcResult.status==='ok'&&Array.isArray(gcResult.configs)){
+      gcResult.configs.forEach(c=>{
+        const pOk=!c.partner||c.partner===partner;
+        const tOk=!c.schoolTrack||c.schoolTrack===schoolTrack;
+        if(pOk&&tOk) cfgMap[c.grade]=parseInt(c.level)||0;
+      });
+    }
+
+    // Fetch session obs for each grade in parallel (all cache-first)
+    const soResults=await Promise.all(
+      grades.map(g=>cfgMap[g]?fetchSessionObs(url,code,cfgMap[g],s.token):Promise.resolve(null))
+    );
+    renderSdsProgress(grades, cfgMap, soResults);
+
+  }catch(e){
+    $('sdsSectionTable').innerHTML='<p style="color:var(--err);padding:20px">Could not load. Try again.</p>';
+    $('sdsProgressBody').innerHTML='';
+  }
+}
+
+function renderSdsSectionTable(submissions){
+  if(!submissions.length){
+    $('sdsSectionTable').innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0">No section data submitted yet.</p>';
+    return;
+  }
+  const sorted=[...submissions].sort((a,b)=>{
+    const gA=Number(a['Grade']||0), gB=Number(b['Grade']||0);
+    if(gA!==gB) return gA-gB;
+    return String(a['Section']||'').localeCompare(String(b['Section']||''));
+  });
+  let totalSL=0, totalTeams=0, totalStudents=0;
+  const rows=sorted.map(r=>{
+    const sl=Number(r['Total SL']||0);
+    const teams=Number(r['Total Teams']||0);
+    const stu=Number(r['Total Students']||0);
+    totalSL+=sl; totalTeams+=teams; totalStudents+=stu;
+    const g=String(r['Grade']||'').trim();
+    const sec=String(r['Section']||'').trim();
+    return `<tr>
+      <td style="font-weight:600">${g} &ndash; ${sec}</td>
+      <td style="text-align:center">${sl}</td>
+      <td style="text-align:center">${teams}</td>
+      <td style="text-align:center">${stu}</td>
+    </tr>`;
+  }).join('');
+  $('sdsSectionTable').innerHTML=`
+    <table class="dash-table" style="font-size:13px">
+      <thead><tr>
+        <th>Grade-Sec</th>
+        <th style="text-align:center">SLs</th>
+        <th style="text-align:center">Teams</th>
+        <th style="text-align:center">Students</th>
+      </tr></thead>
+      <tbody>
+        ${rows}
+        <tr style="font-weight:700;background:var(--pastel)">
+          <td>Total</td>
+          <td style="text-align:center">${totalSL}</td>
+          <td style="text-align:center">${totalTeams}</td>
+          <td style="text-align:center">${totalStudents}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+function renderSdsProgress(grades, cfgMap, soResults){
+  if(!grades.length){
+    $('sdsProgressBody').innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0">No grade data available.</p>';
+    return;
+  }
+  const TOTAL=6;
+  const sortedGrades=[...grades].sort((a,b)=>Number(a)-Number(b));
+  const html=sortedGrades.map((g,i)=>{
+    const origIdx=grades.indexOf(g);
+    const lvl=cfgMap[g]||0;
+    const res=soResults[origIdx];
+    let done=0;
+    if(res&&res.status==='ok'){
+      const allDone=new Set([...(res.submitted||[]),...(res.iifSubmitted||[])]);
+      done=allDone.size;
+    }
+    const segments=Array.from({length:TOTAL},(_,j)=>`<span style="display:inline-block;width:20px;height:14px;border-radius:4px;background:${j<done?'#22C55E':'#CBD5E1'};margin-right:3px"></span>`).join('');
+    const lvlLabel=lvl?`<span style="font-size:11px;color:var(--muted);margin-left:6px">Level ${lvl}</span>`:'';
+    const countLabel=`<span style="font-size:12px;font-weight:700;color:${done===TOTAL?'#15803D':'var(--muted)'};margin-left:8px">${done} of ${TOTAL}</span>`;
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:700;color:var(--navy)">Grade ${g}</span>${lvlLabel}${countLabel}
+      </div>
+      <div style="display:flex;align-items:center">${segments}</div>
+    </div>`;
+  }).join('');
+  $('sdsProgressBody').innerHTML=html;
 }
 
 function openSchoolForm(which){
@@ -1892,6 +2056,7 @@ async function showSchoolFormDetail(which){
   if(!sdData) return;
   $('sdSessionObsCard').style.display='none';
   $('sdBuddyCard').style.display='none';
+  $('sdDashCard').style.display='none';
   $('homeBtn').style.display='block';
   const d1=sdData['form1_school_orientation'], d2=sdData['form2_schools_contact'],
         d3=sdData['form3_student_data'];
