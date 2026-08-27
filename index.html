@@ -5517,7 +5517,7 @@ function renderSessionObsForm(){
   html+=soYesNo('q1',true);
   html+=soConditional('q1','No',
     soLabel('Q2','What happened because an SL was absent?',true)+
-    soOptions('q2',['The teacher ran the session instead','Two groups were combined into one','A Support SL took over the session'],false,true)
+    soOptions('q2',['The teacher ran the session instead','Two groups were combined into one','A Support SL took over the session'],true,true)
   );
   html+=soLabel('Q3','How many students attended the session?',true);
   html+=`<input type="number" id="${soQ('q3Attendance')}" min="0" inputmode="numeric" style="margin-top:8px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;width:100%;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--navy)" oninput="soSet('q3Attendance',this.value)" placeholder="0">`;
@@ -5533,7 +5533,7 @@ function renderSessionObsForm(){
   html+=soYesNo('q5',true);
   html+=soConditional('q5','No',
     soLabel('Q7','Why was no video played today?',true)+
-    soOptions('q6',['No internet or power','Not enough time','Problem with the pendrive or IFP screen'],false,true)
+    soOptions('q6',['No internet or power','Not enough time','Problem with the pendrive or IFP screen'],true,true)
   );
   html+=soConditional('q5','Yes',
     soLabel('Q8','How was the video played?',true)+
@@ -5683,14 +5683,14 @@ async function submitSessionObs(){
 
   // Mandatory field validation
   if(!soAnswers['q1']){ toast('Attendance: Please answer Q1 — were all SLs present today?'); return; }
-  if(soAnswers['q1']==='No' && !soAnswers['q2']){ toast('Attendance: Please answer Q2 — what happened because an SL was absent?'); return; }
+  if(soAnswers['q1']==='No' && !(soAnswers['q2']&&soAnswers['q2'].length)){ toast('Attendance: Please answer Q2 — what happened because an SL was absent?'); return; }
   if(soAnswers['q1']==='No' && !soOtherFilled('q2')){ toast('Attendance: Please specify what happened (Q2 "Other").'); return; }
   if(soAnswers['q3Attendance']===''||soAnswers['q3Attendance']===undefined||soAnswers['q3Attendance']===null){ toast('Attendance: Please answer Q3 — how many students attended the session?'); return; }
   if(!soAnswers['q3']){ toast('Attendance: Please answer Q4 — what did the Support SL do today?'); return; }
   if(soAnswers['q3']==='5'){ toast('Attendance: Please describe what the Support SL did (Q4 "Something else").'); return; }
   if(!soAnswers['q4']){ toast('Attendance: Please answer Q5 — how much did the teacher step in?'); return; }
   if(!soAnswers['q5']){ toast('Video: Please answer Q6 — were videos played today?'); return; }
-  if(soAnswers['q5']==='No' && !soAnswers['q6']){ toast('Video: Please answer Q7 — why was no video played today?'); return; }
+  if(soAnswers['q5']==='No' && !(soAnswers['q6']&&soAnswers['q6'].length)){ toast('Video: Please answer Q7 — why was no video played today?'); return; }
   if(soAnswers['q5']==='No' && !soOtherFilled('q6')){ toast('Video: Please specify why the video wasn\'t played (Q7 "Other").'); return; }
   if(soAnswers['q5']==='Yes'){
     if(!soAnswers['q7']){ toast('Video: Please answer Q8 — how was the video played?'); return; }
@@ -5808,8 +5808,8 @@ async function submitSessionObs(){
         grade:soState.grade, schoolTrack:soState.schoolTrack, date:new Date().toLocaleDateString('en-IN')
       },
       common:{
-        q1:soAnswers.q1||'', q2:soAnswers.q2||'', q3Attendance:Number(soAnswers.q3Attendance)||'', q3:soAnswers.q3||'', q4:soAnswers.q4||'',
-        q5:soAnswers.q5||'', q6:soAnswers.q6||'', q7:soAnswers.q7||'', q8:soAnswers.q8||[], q9:soAnswers.q9||'',
+        q1:soAnswers.q1||'', q2:soAnswers.q2||[], q3Attendance:Number(soAnswers.q3Attendance)||'', q3:soAnswers.q3||'', q4:soAnswers.q4||'',
+        q5:soAnswers.q5||'', q6:soAnswers.q6||[], q7:soAnswers.q7||'', q8:soAnswers.q8||[], q9:soAnswers.q9||'',
         q10:soAnswers.q10||'', q11:soAnswers.q11||'', q12:soAnswers.q12||[], q13:soAnswers.q13||'',
         q14Photos, q15:soAnswers.q15||''
       },
