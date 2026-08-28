@@ -2376,7 +2376,7 @@ function handleSaveGradeConfig(payload) {
 var SO_COLUMNS = [
   'Submission ID','Submitted At','Submitted By','Form Version','Status',
   'Partner','School','School Code','School Track','Role','Your Name',
-  'Level','Grade','Unit','Session Name','Date',
+  'Level','Session','Grade','Unit','Session Name','Date',
   'Q1 SLs Present','Q2 SL Absent Reason','Q3 Students Attended',
   'Q4 Support SL Role','Q5 Teacher Involvement',
   'Q6 Videos Played','Q7 No Video Reason','Q8 Video Method','Q9 Video Played By','Q10 Students Follow Video',
@@ -2430,8 +2430,8 @@ function getOrCreateSessionObsSheet(partner, ss) {
   return newSheet;
 }
 
-function getOrCreateSessionObsTab(soSheet, level, session) {
-  var tabName = 'L' + level + '-S' + session;
+function getOrCreateSessionObsTab(soSheet, level) {
+  var tabName = 'L' + level;
   var tab = soSheet.getSheetByName(tabName);
   if (!tab) {
     tab = soSheet.insertSheet(tabName);
@@ -2462,6 +2462,7 @@ function buildRowSessionObs(payload) {
     'Role': h.role || '',
     'Your Name': h.yourName || '',
     'Level': String(h.level || ''),
+    'Session': String(h.session || ''),
     'Grade': String(h.grade || ''),
     'Unit': String(h.unit || '1'),
     'Session Name': h.sessionName || '',
@@ -2547,7 +2548,7 @@ function handleSessionObsSubmit(payload) {
   if (!level || !session) return json({ status: 'error', message: 'Level and session are required.' });
 
   var soSheet = getOrCreateSessionObsSheet(partner, ss);
-  var tab = getOrCreateSessionObsTab(soSheet, level, session);
+  var tab = getOrCreateSessionObsTab(soSheet, level);
   var row = buildRowSessionObs(payload);
   tab.appendRow(row);
 
@@ -2640,24 +2641,26 @@ function handleGetSessionObsDetail(p) {
   if (!partnerName) return json({ status:'error', message:'Partner not found' });
 
   var soSheet = getOrCreateSessionObsSheet(partnerName, ss);
-  var tabName = 'L' + level + '-S' + sessionNum;
-  var tab = soSheet.getSheetByName(tabName);
+
+  var tab = soSheet.getSheetByName('L' + level);
   if (!tab) return json({ status:'error', message:'No data found' });
 
   var data = tab.getDataRange().getValues();
   if (data.length < 2) return json({ status:'error', message:'No submissions found' });
   var header = data[0];
-  var scIdx     = header.indexOf('School Code');
-  var roleIdx   = header.indexOf('Role');
-  var statusIdx = header.indexOf('Status');
+  var scIdx      = header.indexOf('School Code');
+  var roleIdx    = header.indexOf('Role');
+  var statusIdx  = header.indexOf('Status');
+  var sessionIdx = header.indexOf('Session');
 
   var teacherRow = null, iifRow = null;
   for (var i = 1; i < data.length; i++) {
     if (teacherRow && iifRow) break;
-    var rowSC   = String(data[i][scIdx]   || '').trim().toUpperCase();
-    var rowRole = String(data[i][roleIdx] || '').trim();
-    var rowSt   = statusIdx >= 0 ? String(data[i][statusIdx] || '').toLowerCase() : '';
+    var rowSC = String(data[i][scIdx] || '').trim().toUpperCase();
+    var rowSt = statusIdx >= 0 ? String(data[i][statusIdx] || '').toLowerCase() : '';
     if (rowSC !== schoolCode || rowSt === 'superseded') continue;
+    if (sessionIdx >= 0 && String(data[i][sessionIdx] || '').trim() !== sessionNum) continue;
+    var rowRole = String(data[i][roleIdx] || '').trim();
     if (rowRole === 'Teacher'      && !teacherRow) teacherRow = data[i];
     if (rowRole === 'IIF Observer' && !iifRow)     iifRow     = data[i];
   }
@@ -2685,34 +2688,34 @@ function handleGetSessionObs(p) {
   if (!partnerName) return json({ status: 'ok', submitted: [], iifSubmitted: [] });
 
   var soSheet = getOrCreateSessionObsSheet(partnerName, ss);
-  var submitted = [];
-  var iifSubmitted = [];
-  var MAX_SESSIONS = 6;
+  var teacherSessions = {};
+  var iifSessions = {};
 
-  for (var sess = 1; sess <= MAX_SESSIONS; sess++) {
-    var tabName = 'L' + level + '-S' + sess;
-    var tab = soSheet.getSheetByName(tabName);
-    if (!tab) continue;
+  var tab = soSheet.getSheetByName('L' + level);
+  if (tab) {
     var data = tab.getDataRange().getValues();
-    if (data.length < 2) continue;
-    var header = data[0];
-    var scIdx     = header.indexOf('School Code');
-    var roleIdx   = header.indexOf('Role');
-    var statusIdx = header.indexOf('Status');
-    var teacherFound = false, iifFound = false;
-    for (var i = 1; i < data.length; i++) {
-      if (teacherFound && iifFound) break;
-      var rowSC   = String(data[i][scIdx]   || '').trim().toUpperCase();
-      if (rowSC !== schoolCode) continue;
-      var rowRole = String(data[i][roleIdx] || '').trim();
-      var rowSt   = statusIdx >= 0 ? String(data[i][statusIdx] || '').toLowerCase() : '';
-      if (rowSt === 'superseded') continue;
-      if (rowRole === 'Teacher')      teacherFound = true;
-      if (rowRole === 'IIF Observer') iifFound     = true;
+    if (data.length >= 2) {
+      var header     = data[0];
+      var scIdx      = header.indexOf('School Code');
+      var roleIdx    = header.indexOf('Role');
+      var statusIdx  = header.indexOf('Status');
+      var sessionIdx = header.indexOf('Session');
+      for (var i = 1; i < data.length; i++) {
+        var rowSC = String(data[i][scIdx] || '').trim().toUpperCase();
+        if (rowSC !== schoolCode) continue;
+        var rowSt = statusIdx >= 0 ? String(data[i][statusIdx] || '').toLowerCase() : '';
+        if (rowSt === 'superseded') continue;
+        var rowSess = sessionIdx >= 0 ? parseInt(String(data[i][sessionIdx] || ''), 10) : 0;
+        if (!rowSess) continue;
+        var rowRole = String(data[i][roleIdx] || '').trim();
+        if (rowRole === 'Teacher')      teacherSessions[rowSess] = true;
+        if (rowRole === 'IIF Observer') iifSessions[rowSess]     = true;
+      }
     }
-    if (teacherFound) submitted.push(sess);
-    if (iifFound)     iifSubmitted.push(sess);
   }
+
+  var submitted    = Object.keys(teacherSessions).map(Number).sort(function(a,b){return a-b;});
+  var iifSubmitted = Object.keys(iifSessions).map(Number).sort(function(a,b){return a-b;});
   var result = { status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted };
   setCached(cacheKey, result, 300);
   return json(result);
