@@ -1763,24 +1763,36 @@ function callGemini(messages, model, jsonMode) {
   var modelName = model || 'gemini-2.5-flash';
   var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
 
-  var response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    payload: JSON.stringify(reqPayload),
-    muteHttpExceptions: true
-  });
-
-  var result = JSON.parse(response.getContentText());
-  if (result.error) throw new Error('Gemini error: ' + result.error.message);
-  var cand = result.candidates && result.candidates[0];
-  if (!cand || !cand.content || !cand.content.parts) throw new Error('Gemini returned no content');
-  var textPart = null;
-  for (var pi = 0; pi < cand.content.parts.length; pi++) {
-    var p = cand.content.parts[pi];
-    if (p.text && !p.thought) { textPart = p; break; }
+  var lastError = null;
+  var delays = [0, 5000, 10000]; // retry after 0s, 5s, 10s
+  for (var attempt = 0; attempt < delays.length; attempt++) {
+    if (delays[attempt] > 0) Utilities.sleep(delays[attempt]);
+    var response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      payload: JSON.stringify(reqPayload),
+      muteHttpExceptions: true
+    });
+    var result = JSON.parse(response.getContentText());
+    if (result.error) {
+      var msg = result.error.message || '';
+      var isRetryable = msg.indexOf('high demand') !== -1 || msg.indexOf('RESOURCE_EXHAUSTED') !== -1 ||
+                        msg.indexOf('quota') !== -1 || result.error.code === 429 || result.error.code === 503;
+      lastError = new Error('Gemini error: ' + msg);
+      if (isRetryable && attempt < delays.length - 1) continue;
+      throw lastError;
+    }
+    var cand = result.candidates && result.candidates[0];
+    if (!cand || !cand.content || !cand.content.parts) throw new Error('Gemini returned no content');
+    var textPart = null;
+    for (var pi = 0; pi < cand.content.parts.length; pi++) {
+      var p = cand.content.parts[pi];
+      if (p.text && !p.thought) { textPart = p; break; }
+    }
+    if (!textPart) throw new Error('Gemini returned no text in response');
+    return textPart.text;
   }
-  if (!textPart) throw new Error('Gemini returned no text in response');
-  return textPart.text;
+  throw lastError;
 }
 
 // -------- DRIVE FILE ID EXTRACTOR --------
