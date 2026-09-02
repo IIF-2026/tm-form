@@ -4682,9 +4682,12 @@ async function sbGenerateFeedback(ctx='sb'){
         sbUpdateTeamStatus(res.teamCode);
       });
       sbUpdateButtons();
-      const n=results.length, errCount=(j.errors||[]).length;
+      const n=results.length, errs=(j.errors||[]);
       let msg='&#10003; Feedback generated for '+n+' team'+(n!==1?'s':'');
-      if(errCount) msg+=' ('+errCount+' error'+(errCount>1?'s':'')+' — some teams may need retry)';
+      if(errs.length){
+        msg+=' ('+errs.length+' error'+(errs.length>1?'s':'')+')';
+        errs.forEach(e=>{ msg+='<br><small style="color:var(--err)">'+e.teamCode+': '+e.error+'</small>'; });
+      }
       statusEl.style.color='var(--ok)'; statusEl.innerHTML=msg;
     } else {
       statusEl.style.color='var(--err)'; statusEl.textContent='Error: '+(j.message||'Generation failed');
