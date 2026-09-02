@@ -4984,7 +4984,8 @@ const SO_TRANSLATIONS = {
   en: {
     ui: {
       observing:'OBSERVING', saveBtn:'Save draft', submitBtn:'Submit Observation',
-      optional:'(Optional)', pleaseSpecify:'Please specify…', pleaseDescribe:'Please describe…'
+      optional:'(Optional)', pleaseSpecify:'Please specify…', pleaseDescribe:'Please describe…',
+      chooseFiles:'Choose files or take photos', uploadSessionPhotos:'Upload session photos / videos'
     },
     sections: {
       'Attendance & Involvement':'Attendance & Involvement',
@@ -5056,13 +5057,50 @@ const SO_TRANSLATIONS = {
       sq3:['Could not complete most of it','Completed a small part','Completed most of it, with gaps','Completed it well','Completed fully and confidently'],
       sq4:['Could not proceed without constant support','Heavy support, needed help throughout','Moderate support, needed regular help','Minimal support, asked once or twice','No support needed'],
       sq5:['Did not understand at all','Understood only a little','Understood somewhat','Understood well','Understood very well'],
+      q19:['Could not explain clearly at all, students were lost','Explanation was unclear, students often confused','Explained okay, students sometimes needed clarity','Explained clearly, most students understood','Explained very clearly, almost all students understood'],
       act_q1:['Students struggled a lot — could not really do it','Completed but needed a lot of help','Adequate, went okay','Good, went well with minor issues','Excellent, went very well']
+    },
+    actExtras: {
+      '1_1_1_aq3':{text:"How would you describe the way this team came together for their very first activity?",labels:['Struggled to work together, unclear roles','Some friction, roles unclear for parts','Worked together with occasional confusion','Cooperated well, minor rough patches','Came together naturally, worked well right away']},
+      '1_3_4_aq3':{text:'Artefacts — Upload photos from workbook Page 52 & 53 (one per SL)'},
+      '1_5_4_aq3':{text:'Artefacts — Upload photos from workbook Page 80 & 82 (one per SL)'},
+      '2_1_1_aq3':{text:"How would you describe the way this team came together for their very first activity?",labels:['Struggled to work together, unclear roles','Some friction, roles unclear for parts','Worked together with occasional confusion','Cooperated well, minor rough patches','Came together naturally, worked well right away']},
+      '2_1_3_aq3':{text:"Any specific notes on the length of 'Survival Challenge'? Did this activity delay the whole session?"},
+      '2_2_4_aq3':{text:'How independently were students able to follow the video instructions with minimal SL support?',labels:['Required constant SL support','Required significant SL support','Required moderate SL support','Required minimal SL support','Followed instructions independently']},
+      '2_3_5_aq3':{text:'Did all students participate in the team reflection, or was it completed by one person?'},
+      '2_4_2_aq3':{text:"How was the concept of 'properties of materials' for students to grasp?",labels:['Very difficult, most students struggled','Somewhat difficult, needed a lot of re-explaining','Moderate, understood with some help','Fairly easy, most grasped it quickly','Very easy, understood right away']},
+      '2_5_3_aq3':{text:'What percentage of students actively participated and offered their own ideas during individual ideation?'},
+      '2_5_3_aq4':{text:'Upload photos — one per cluster from workbook Page 78–84'},
+      '2_6_2_aq3':{text:'Artefacts — Upload photos from workbook Page 91 (one per cluster) and Page 93'},
+      '3_1_1_aq3':{text:"How would you describe the way this team came together for their very first activity?",labels:['Struggled to work together, unclear roles','Some friction, roles unclear for parts','Worked together with occasional confusion','Cooperated well, minor rough patches','Came together naturally, worked well right away']},
+      '3_2_3_aq3':{text:'What percentage of teams correctly matched the scenes to the steps of the problem-solving process (pg. 28)?'},
+      '3_3_5_aq3':{text:'How many teams correctly identified the causes and effects from the dialogues of people?'},
+      '3_3_5_aq4':{text:'Upload photos — one per SL from workbook Page 48–49'},
+      '3_4_3_aq3':{text:'In what percentage of teams did all team members take part in creating the rule card?'},
+      '3_4_3_aq4':{text:'Upload photos — one per SL from workbook Page 64'},
+      '3_5_2_aq3':{text:'How many students were able to think of their own ideas during individual ideation?'},
+      '3_6_2_aq3':{text:"How well did the teams use their Inqui-Buddy's feedback to improve their solution?",labels:['< 25% of teams used the feedback to make changes','Around 25% of teams used the feedback','About 50% of teams used the feedback','More than 70% of teams used the feedback']}
+    },
+    teacherUploads: {
+      '1_4_0':{text:"Upload all teams' workbook Page 66 photos"},
+      '1_6_0':{text:"Upload all teams' workbook Page 90 photos"},
+      '1_6_1':{text:"Upload all teams' workbook Page 92–93 photos"},
+      '2_1_0':{text:"Upload teams' model photos (one per SL)"},
+      '2_2_0':{text:"Upload all teams' workbook Page 31 photos"},
+      '2_5_0':{text:"Upload all teams' workbook Page 87 photos"},
+      '2_6_0':{text:"Upload all teams' workbook Page 96–97 photos"},
+      '2_6_1':{text:"Add Physical Prototype photo / video recording of final 3 student presentations"},
+      '3_3_0':{text:"Upload all teams' workbook Page 48–49 photos (one per SL)"},
+      '3_5_0':{text:"Upload all teams' workbook Page 82–83 photos"},
+      '3_6_0':{text:"Upload all teams' workbook Page 90–92 photos"},
+      '3_6_1':{text:"Upload all teams' workbook Page 98–99 photos"}
     }
   },
   te: {
     ui: {
       observing:'పరిశీలిస్తున్నారు', saveBtn:'డ్రాఫ్ట్ సేవ్ చేయండి', submitBtn:'పరిశీలన సమర్పించండి',
-      optional:'(ఐచ్ఛికం)', pleaseSpecify:'దయచేసి పేర్కొనండి…', pleaseDescribe:'దయచేసి వివరించండి…'
+      optional:'(ఐచ్ఛికం)', pleaseSpecify:'దయచేసి పేర్కొనండి…', pleaseDescribe:'దయచేసి వివరించండి…',
+      chooseFiles:'ఫైళ్ళు ఎంచుకోండి లేదా ఫోటోలు తీయండి', uploadSessionPhotos:'సెషన్ ఫోటోలు / వీడియోలు అప్‌లోడ్ చేయండి'
     },
     sections: {
       'Attendance & Involvement':'హాజరు & భాగస్వామ్యం',
@@ -5134,7 +5172,43 @@ const SO_TRANSLATIONS = {
       sq3:['చాలా భాగం పూర్తి చేయలేకపోయారు','చిన్న భాగం మాత్రమే పూర్తి చేశారు','చాలా భాగం పూర్తి చేశారు, కానీ కొన్ని అంతరాలు ఉన్నాయి','బాగా పూర్తి చేశారు','పూర్తిగా మరియు నమ్మకంగా పూర్తి చేశారు'],
       sq4:['నిరంతర మద్దతు లేకుండా ముందుకు వెళ్ళలేకపోయారు','మొత్తం సమయం సహాయం అవసరమైంది','మధ్యస్థ మద్దతు, క్రమం తప్పకుండా సహాయం కావాల్సి వచ్చింది','కనీస మద్దతు, ఒకటి రెండు సార్లు మాత్రమే అడిగారు','మద్దతు అవసరం లేదు'],
       sq5:['అస్సలు అర్థమైనట్లు లేదు','కొంచెం మాత్రమే అర్థమైంది','కొంత వరకు అర్థమైంది','బాగా అర్థమైంది','చాలా బాగా అర్థమైంది'],
+      q19:['విద్యార్థులు పూర్తిగా అర్థం కాలేదు, వారు తికమక పడ్డారు','వివరణ అస్పష్టంగా ఉంది, విద్యార్థులు తరచుగా గందరగోళపడ్డారు','సరిగ్గా వివరించారు, విద్యార్థులకు కొన్నిసార్లు స్పష్టత అవసరమైంది','స్పష్టంగా వివరించారు, చాలా మంది విద్యార్థులు అర్థం చేసుకున్నారు','చాలా స్పష్టంగా వివరించారు, దాదాపు అన్ని విద్యార్థులు అర్థం చేసుకున్నారు'],
       act_q1:['విద్యార్థులు చాలా ఇబ్బంది పడ్డారు — నిజంగా చేయలేకపోయారు','చాలా సహాయంతో పూర్తి చేశారు','సరిగా ఉంది, ఓకే అయింది','బాగుంది, చిన్న సమస్యలతో జరిగింది','అద్భుతంగా, చాలా బాగా జరిగింది']
+    },
+    actExtras: {
+      '1_1_1_aq3':{text:'ఈ జట్టు వారి మొట్టమొదటి కార్యకలాపం కోసం ఒకచోట చేరిన తీరును మీరు ఎలా వివరిస్తారు?',labels:['కలిసి పని చేయడం కష్టంగా ఉంది, పాత్రలు అస్పష్టంగా ఉన్నాయి','కొంత ఘర్షణ ఉంది, కొంత భాగానికి పాత్రలు అస్పష్టంగా ఉన్నాయి','అప్పుడప్పుడు గందరగోళంతో కలిసి పని చేశారు','బాగా సహకరించారు, చిన్న సమస్యలు మాత్రమే ఉన్నాయి','సహజంగా ఏకమయ్యారు, వెంటనే బాగా పని చేశారు']},
+      '1_3_4_aq3':{text:'వర్క్‌బుక్ పేజీ 52 & 53 నుండి ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో SL నుండి ఒకటి)'},
+      '1_5_4_aq3':{text:'వర్క్‌బుక్ పేజీ 80 & 82 నుండి ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో SL నుండి ఒకటి)'},
+      '2_1_1_aq3':{text:'ఈ జట్టు వారి మొట్టమొదటి కార్యకలాపం కోసం ఒకచోట చేరిన తీరును మీరు ఎలా వివరిస్తారు?',labels:['కలిసి పని చేయడం కష్టంగా ఉంది, పాత్రలు అస్పష్టంగా ఉన్నాయి','కొంత ఘర్షణ ఉంది, కొంత భాగానికి పాత్రలు అస్పష్టంగా ఉన్నాయి','అప్పుడప్పుడు గందరగోళంతో కలిసి పని చేశారు','బాగా సహకరించారు, చిన్న సమస్యలు మాత్రమే ఉన్నాయి','సహజంగా ఏకమయ్యారు, వెంటనే బాగా పని చేశారు']},
+      '2_1_3_aq3':{text:"'Survival Challenge' వ్యవధిపై ఏదైనా ప్రత్యేక గమనికలు ఉన్నాయా? ఈ కార్యకలాపం మొత్తం సెషన్‌ను ఆలస్యం చేసిందా?"},
+      '2_2_4_aq3':{text:'కనీస SL మద్దతుతో విద్యార్థులు వీడియో సూచనలను స్వతంత్రంగా అనుసరించగలిగారా?',labels:['నిరంతర SL మద్దతు అవసరమైంది','చాలా SL మద్దతు అవసరమైంది','మధ్యస్థ SL మద్దతు అవసరమైంది','కనీస SL మద్దతు అవసరమైంది','స్వతంత్రంగా సూచనలు అనుసరించారు']},
+      '2_3_5_aq3':{text:'అన్ని విద్యార్థులు జట్టు ప్రతిబింబంలో పాల్గొన్నారా, లేదా ఒక వ్యక్తి మాత్రమే పూర్తి చేశారా?'},
+      '2_4_2_aq3':{text:"విద్యార్థులకు 'మెటీరియల్స్ యొక్క లక్షణాలు' అనే భావన అర్థం చేసుకోవడం ఎంత సులభంగా ఉంది?",labels:['చాలా కష్టంగా ఉంది, చాలా మంది విద్యార్థులు ఇబ్బంది పడ్డారు','కొంచెం కష్టంగా ఉంది, చాలా తిరిగి వివరించాల్సి వచ్చింది','మధ్యస్థంగా, కొంత సహాయంతో అర్థమైంది','చాలా సులభంగా ఉంది, చాలా మంది త్వరగా అర్థం చేసుకున్నారు','చాలా సులభంగా ఉంది, వెంటనే అర్థమైంది']},
+      '2_5_3_aq3':{text:'వ్యక్తిగత ఆలోచన సమయంలో ఎంత శాతం మంది విద్యార్థులు చురుకుగా పాల్గొని తమ స్వంత ఆలోచనలు అందించారు?'},
+      '2_5_3_aq4':{text:'వర్క్‌బుక్ పేజీ 78–84 నుండి ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో క్లస్టర్ నుండి ఒకటి)'},
+      '2_6_2_aq3':{text:'వర్క్‌బుక్ పేజీ 91 (ఒక్కో క్లస్టర్ నుండి ఒకటి) మరియు పేజీ 93 నుండి ఫోటోలు అప్‌లోడ్ చేయండి'},
+      '3_1_1_aq3':{text:'ఈ జట్టు వారి మొట్టమొదటి కార్యకలాపం కోసం ఒకచోట చేరిన తీరును మీరు ఎలా వివరిస్తారు?',labels:['కలిసి పని చేయడం కష్టంగా ఉంది, పాత్రలు అస్పష్టంగా ఉన్నాయి','కొంత ఘర్షణ ఉంది, కొంత భాగానికి పాత్రలు అస్పష్టంగా ఉన్నాయి','అప్పుడప్పుడు గందరగోళంతో కలిసి పని చేశారు','బాగా సహకరించారు, చిన్న సమస్యలు మాత్రమే ఉన్నాయి','సహజంగా ఏకమయ్యారు, వెంటనే బాగా పని చేశారు']},
+      '3_2_3_aq3':{text:'సమస్య-పరిష్కార ప్రక్రియ దశలకు సన్నివేశాలను సరిగ్గా జతపరిచిన జట్ల శాతం ఎంత (పేజీ 28)?'},
+      '3_3_5_aq3':{text:'సంభాషణల నుండి కారణాలు మరియు ప్రభావాలను సరిగ్గా గుర్తించిన జట్లు ఎన్ని?'},
+      '3_3_5_aq4':{text:'వర్క్‌బుక్ పేజీ 48–49 నుండి ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో SL నుండి ఒకటి)'},
+      '3_4_3_aq3':{text:'రూల్ కార్డ్ తయారు చేయడంలో అన్ని సభ్యులు పాల్గొన్న జట్ల శాతం ఎంత?'},
+      '3_4_3_aq4':{text:'వర్క్‌బుక్ పేజీ 64 నుండి ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో SL నుండి ఒకటి)'},
+      '3_5_2_aq3':{text:'వ్యక్తిగత ఆలోచన సమయంలో స్వంత ఆలోచనలు రూపొందించగలిగిన విద్యార్థులు ఎంత మంది?'},
+      '3_6_2_aq3':{text:'Inqui-Buddy యొక్క అభిప్రాయాన్ని జట్లు వారి పరిష్కారాన్ని మెరుగుపరచుకోవడానికి ఎంత బాగా ఉపయోగించుకున్నాయి?',labels:['25% కంటే తక్కువ జట్లు అభిప్రాయాన్ని మార్పులకు ఉపయోగించాయి','దాదాపు 25% జట్లు అభిప్రాయాన్ని ఉపయోగించాయి','దాదాపు 50% జట్లు అభిప్రాయాన్ని ఉపయోగించాయి','70% కంటే ఎక్కువ జట్లు అభిప్రాయాన్ని ఉపయోగించాయి']}
+    },
+    teacherUploads: {
+      '1_4_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 66 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '1_6_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 90 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '1_6_1':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 92–93 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '2_1_0':{text:"జట్ల నమూనా ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో SL నుండి ఒకటి)"},
+      '2_2_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 31 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '2_5_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 87 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '2_6_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 96–97 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '2_6_1':{text:"చివరి 3 విద్యార్థుల ప్రెజెంటేషన్ల ఫిజికల్ ప్రొటోటైప్ ఫోటో / వీడియో రికార్డింగ్ జోడించండి"},
+      '3_3_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 48–49 ఫోటోలు అప్‌లోడ్ చేయండి (ఒక్కో SL నుండి ఒకటి)"},
+      '3_5_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 82–83 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '3_6_0':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 90–92 ఫోటోలు అప్‌లోడ్ చేయండి"},
+      '3_6_1':{text:"అన్ని జట్ల వర్క్‌బుక్ పేజీ 98–99 ఫోటోలు అప్‌లోడ్ చేయండి"}
     }
   }
 };
@@ -5511,10 +5585,10 @@ async function soViewSession(idx){
    ============================================================ */
 function soQ(name){ return `so_${name}`; }
 
-function soScale(name, n, labels, required, otherVal){
+function soScale(name, n, labels, required, otherVal, i18nOverride){
   const ov=otherVal?String(otherVal):'';
   const m=name.match(/^act\d+_q(\d+)$/);
-  const i18nBase=m?'scaleLabels.act_q'+m[1]:'scaleLabels.'+name;
+  const i18nBase=i18nOverride||(m?'scaleLabels.act_q'+m[1]:'scaleLabels.'+name);
   const rows=Array.from({length:n},(_,i)=>{
     const v=i+1; const lbl=labels?labels[i]:'';
     return `<div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="soScaleClick(this.querySelector('.so-scale-btn'))">
@@ -5638,9 +5712,10 @@ function soPhotoChanged(id, input){
   soPhotos[id]=input.files[0]||null;
   document.getElementById(id+'_name').textContent=soPhotos[id]?soPhotos[id].name:'';
 }
-function soMultiFileInput(id, accept, text){
+function soMultiFileInput(id, accept, text, i18nKey){
+  const btnInner=i18nKey?`<span data-i18n="${i18nKey}">${text||'Choose Files / Take Photos'}</span>`:(text||'Choose Files / Take Photos');
   return `<div style="margin-top:8px">
-    <button type="button" onclick="document.getElementById('${id}_file').click()" style="padding:10px 16px;border:1px dashed var(--line);border-radius:10px;background:#f9f9f9;cursor:pointer;font-size:13px;width:100%;text-align:left">📎 ${text||'Choose Files / Take Photos'}</button>
+    <button type="button" onclick="document.getElementById('${id}_file').click()" style="padding:10px 16px;border:1px dashed var(--line);border-radius:10px;background:#f9f9f9;cursor:pointer;font-size:13px;width:100%;text-align:left">📎 ${btnInner}</button>
     <input id="${id}_file" type="file" accept="${accept||'image/*'}" multiple style="display:none" onchange="soMultiFileChanged('${id}',this)">
     <div id="${id}_name" style="font-size:12px;color:var(--muted);margin-top:4px;min-height:16px"></div>
   </div>`;
@@ -5768,7 +5843,7 @@ function renderSessionObsForm(){
   // S4: Outcomes (common)
   html+=soSec('4','Outcomes');
   html+=soLabel('Q15','Please upload photos or videos of students working from today\'s session.',true,'',false);
-  html+=soMultiFileInput('so_q14','image/*,video/*','Upload session photos / videos');
+  html+=soMultiFileInput('so_q14','image/*,video/*','Upload session photos / videos','ui.uploadSessionPhotos');
   html+=soLabel('Q16','Optional — any suggestions, standout moments, or anything else to share?',false,'',true);
   html+=`<textarea id="${soQ('q15')}" rows="3" style="margin-top:8px" oninput="soSet('q15',this.value)" placeholder="• Any suggestions to improve the activity, session, video, timing, or materials?&#10;• Did any student or SL do something that stood out?&#10;• Anything else you'd like to tell us?"></textarea>`;
   html+='</div>';
@@ -5778,8 +5853,9 @@ function renderSessionObsForm(){
     html+=soSec('5','Workbook Photos');
     html+=`<p class="hint" data-i18n="questions.Q17_hint" style="margin:0 0 8px">Q17 — Please upload photos of the students' workbook pages listed below. These match today's session.</p>`;
     SO_TEACHER_UPLOADS[key].forEach((up,i)=>{
-      html+=soLabel('Q17.'+(i+1), up.text, true, '', false);
-      html+=soMultiFileInput('so_q16_'+(i+1), up.accept, 'Choose files or take photos');
+      const tuKey=`teacherUploads.${key}_${i}`;
+      html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)">Q17.${i+1}. <span data-i18n="${tuKey}.text">${up.text}</span><span class="req">*</span></label>`;
+      html+=soMultiFileInput('so_q16_'+(i+1), up.accept, 'Choose files or take photos', 'ui.chooseFiles');
     });
     html+='</div>';
   }
@@ -5835,12 +5911,13 @@ function renderSessionObsForm(){
       // Extra questions
       actExtras.forEach(eq=>{
         const eKey='act'+act+'_'+eq.id;
-        html+=soLabel(eq.id.toUpperCase(), eq.text, eq.required||false);
-        if(eq.type==='scale5'){ html+=soScale(eKey,5,eq.labels,eq.required); }
-        else if(eq.type==='scale4'){ html+=soScale(eKey,4,eq.labels,eq.required); }
+        const aeKey=`${key}_${act}_${eq.id}`;
+        html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)">${eq.id.toUpperCase()}. <span data-i18n="actExtras.${aeKey}.text">${eq.text}</span>${eq.required?'<span class="req">*</span>':''}</label>`;
+        if(eq.type==='scale5'){ html+=soScale(eKey,5,eq.labels,eq.required,null,`actExtras.${aeKey}.labels`); }
+        else if(eq.type==='scale4'){ html+=soScale(eKey,4,eq.labels,eq.required,null,`actExtras.${aeKey}.labels`); }
         else if(eq.type==='dropdown'){ html+=soDropdown(eKey,eq.opts); }
         else if(eq.type==='textarea'){ html+=`<textarea id="${soQ(eKey)}" rows="2" style="margin-top:8px" oninput="soSet('${eKey}',this.value)"></textarea>`; }
-        else if(eq.type==='photo'){ html+=soMultiFileInput('so_'+eKey,'image/*',eq.text); }
+        else if(eq.type==='photo'){ html+=soMultiFileInput('so_'+eKey,'image/*',eq.text,`actExtras.${aeKey}.text`); }
       });
       html+='</div>';
     }
