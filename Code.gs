@@ -966,7 +966,7 @@ function extractStudentDataFromPhoto(photoBase64, photoUrl, payload, targetSS, p
       ]}
     ];
 
-    var rawResult = callGemini(extractPrompt, 'gemini-2.5-flash', false);
+    var rawResult = callGemini(extractPrompt, 'gemini-3.6-flash', false);
     var cleaned = rawResult.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     var slBlocks = JSON.parse(cleaned);
     if (!Array.isArray(slBlocks)) throw new Error('Gemini returned non-array');
@@ -1604,7 +1604,7 @@ function handleExtractTeamData(payload) {
     ];
     var rawResult = null;
     try {
-      rawResult = callGemini(extractPrompt, 'gemini-2.5-flash', false);
+      rawResult = callGemini(extractPrompt, 'gemini-3.6-flash', false);
     } catch(e) {
       errors.push('Photo ' + (pi+1) + ' Gemini error: ' + e.message);
       continue;
@@ -1680,7 +1680,7 @@ function handleProcessInnovation(payload) {
 
   // Generate feedback
   var feedbackMessages = buildBuddyFeedbackMessages(imageBase64, imageMime);
-  var feedback = callGemini(feedbackMessages, 'gemini-2.5-flash', null);
+  var feedback = callGemini(feedbackMessages, 'gemini-3.6-flash', null);
 
   // Upload audio to Drive (optional)
   var audioDriveUrl = '';
@@ -1760,7 +1760,7 @@ function callGemini(messages, model, jsonMode) {
     reqPayload.generationConfig.responseMimeType = 'application/json';
   }
 
-  var modelName = model || 'gemini-2.5-flash';
+  var modelName = model || 'gemini-3.6-flash';
   var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
 
   var lastError = null;
@@ -2198,7 +2198,7 @@ function handleGenerateSectionFeedback(payload) {
     var feedback = '';
     try {
       var msgs = buildBuddyFeedbackMessages(imageBase64, imageMime);
-      feedback = callGemini(msgs, 'gemini-2.5-flash', null);
+      feedback = callGemini(msgs, 'gemini-3.6-flash', null);
     } catch(e) {
       errors.push({ teamCode: teamCode, error: 'Gemini error: ' + e.message });
       continue;
