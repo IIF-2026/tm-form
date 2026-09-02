@@ -39,6 +39,8 @@
     border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
     font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
   .so-opt.selected{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .so-lang-btn{padding:4px 12px;border:1.5px solid var(--line);border-radius:6px;font-size:12px;font-weight:700;background:#fff;color:var(--ink);cursor:pointer}
+  .so-lang-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:8px 14px;font-size:14px;cursor:pointer}
   .chip.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
@@ -828,7 +830,13 @@
 <!-- SESSION OBSERVATIONS — Form -->
 <main id="sessionObsForm" style="display:none">
   <div id="soContextBar" class="card" style="background:var(--pastel);border:1px solid var(--line)">
-    <div style="font-size:13px;color:var(--muted);margin-bottom:6px">OBSERVING</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div data-i18n="ui.observing" style="font-size:13px;color:var(--muted)">OBSERVING</div>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="so-lang-btn" data-lang="en" onclick="setSoLang('en')">EN</button>
+        <button type="button" class="so-lang-btn" data-lang="te" onclick="setSoLang('te')">తె</button>
+      </div>
+    </div>
     <div id="soCtxSchool" style="font-weight:700;font-size:16px;color:var(--navy)"></div>
     <div id="soCtxMeta" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
     <div id="soCtxDate" style="font-size:13px;color:var(--muted)"></div>
@@ -4888,6 +4896,7 @@ let currentScreen = null;
 let isGoingBack = false;
 let soAnswers = {};
 let soPhotos = {};
+let soLang = localStorage.getItem('tm_so_lang') || 'en';
 let soSchoolGrades = [];
 let soGradeConfigData = [];
 
@@ -4968,6 +4977,166 @@ const SO_TEACHER_UPLOADS = {
   '3_5': [{text:'Upload all teams\' workbook Page 82–83 photos', accept:'image/*', fileTag:'PG82_83'}],
   '3_6': [{text:'Upload all teams\' workbook Page 90–92 photos', accept:'image/*', fileTag:'PG90_92'},
           {text:'Upload all teams\' workbook Page 98–99 photos',  accept:'image/*', fileTag:'PG98_99'}]
+};
+
+// ---------- Bilingual translations for session observation form ----------
+const SO_TRANSLATIONS = {
+  en: {
+    ui: {
+      observing:'OBSERVING', saveBtn:'Save draft', submitBtn:'Submit Observation',
+      optional:'(Optional)', pleaseSpecify:'Please specify…', pleaseDescribe:'Please describe…'
+    },
+    sections: {
+      'Attendance & Involvement':'Attendance & Involvement',
+      'Video Usage':'Video Usage',
+      'Timing & Pacing':'Timing & Pacing',
+      'Outcomes':'Outcomes',
+      'Workbook Photos':'Workbook Photos',
+      'SL Guide Usage':'SL Guide Usage',
+      'Session Questions':'Session Questions',
+      'Activity Questions':'Activity Questions',
+      'Student Leaders':'Student Leaders',
+      'Standout Moments & Your Experience':'Standout Moments & Your Experience'
+    },
+    questions: {
+      'Q1':{text:'Were all the Student Leaders (SLs) present today?',hint:''},
+      'Q2':{text:'What happened because an SL was absent?',hint:''},
+      'Q3':{text:'How many students attended the session?',hint:''},
+      'Q4':{text:'What did the Support SL do today?',hint:'Select the option that best describes their role today.'},
+      'Q5_iif':{text:'How much did the Teacher need to step in and help?',hint:'IIF Observers answer about what you saw.'},
+      'Q5_school':{text:'How much did the Teacher need to step in and help?',hint:'Answer about yourself.'},
+      'Q6':{text:'Were videos played in the session today?',hint:''},
+      'Q7':{text:'Why was no video played today?',hint:''},
+      'Q8':{text:'How was the video played?',hint:''},
+      'Q9':{text:'Who played the video?',hint:''},
+      'Q10':{text:'Were all students able to watch and follow the video together?',hint:''},
+      'Q11':{text:'How well was the timing of the session activities planned?',hint:''},
+      'Q12':{text:'Was there one activity that needed much more help or attention?',hint:'If yes, name it and tell us what happened.'},
+      'Q13':{text:'What did you use to keep time?',hint:''},
+      'Q14':{text:'Who was in charge of keeping time?',hint:''},
+      'Q15':{text:"Please upload photos or videos of students working from today's session.",hint:''},
+      'Q16':{text:'Optional — any suggestions, standout moments, or anything else to share?',hint:''},
+      'Q17_hint':"Please upload photos of the students' workbook pages listed below. These match today's session.",
+      'Q18':{text:'Were the Student Leaders actively using the SL Guide during the session?',hint:''},
+      'Q18b':{text:'What worked well with SL Guide, and what could be better?',hint:''},
+      'SQ1':{text:'How engaged were students during the session overall?',hint:''},
+      'SQ2':{text:'How well did students understand what they were asked to do?',hint:''},
+      'SQ3':{text:"How well were students able to complete the session's activities overall?",hint:''},
+      'SQ4':{text:'How much support did students need from SLs or the teacher?',hint:''},
+      'SQ5':{text:"How well did the students understand today's focus skill?",hint:''},
+      'SQ6':{text:"Describe what you saw — how did students practise today's focus skill?",hint:'e.g. Did the SL use the skill picture/logo, explain it clearly, or connect the activity to the skill?'},
+      'AQ1':{text:'Overall, how did this activity go?',hint:''},
+      'AQ2':{text:'Any suggestions or feedback on this activity?',hint:'Write about time, student engagement, clarity, skills, or teamwork.'},
+      'Q19':{text:'Which language did the Student Leaders mainly use to explain things?',hint:''},
+      'Q20':{text:'How clearly were the Student Leaders able to explain the activities?',hint:''},
+      'Q21':{text:'Did the Student Leaders use any materials from the MMS kit today?',hint:''},
+      'Q21b':{text:'Why not? Any Feedback:',hint:''},
+      'Q22':{text:'Did any student or SL do something today that stood out or surprised you?',hint:'Tell us their name and what they did.'},
+      'Q23':{text:"How was your own experience during today's session?",hint:"Share anything else you'd like to tell us."},
+      'actHint':'For each applicable activity in today\'s session, rate how it went and share feedback.'
+    },
+    options: {
+      yn:{'Yes':'Yes','No':'No','Other':'Other'},
+      q2:{'The teacher ran the session instead':'The teacher ran the session instead','Two groups were combined into one':'Two groups were combined into one','A Support SL took over the session':'A Support SL took over the session'},
+      q6:{'No internet or power':'No internet or power','Not enough time':'Not enough time','Problem with the pendrive or IFP screen':'Problem with the pendrive or IFP screen'},
+      q7:{'Pendrive & TV':'Pendrive & TV','IFP Panel (smart screen)':'IFP Panel (smart screen)','YouTube':'YouTube','Phone':'Phone'},
+      q8:{'Student Leader':'Student Leader','Support SL':'Support SL','Teacher':'Teacher','A student':'A student'},
+      q12:{'Each SL had their own timer':'Each SL had their own timer','One shared timer on the table':'One shared timer on the table','One stopwatch for the whole class':'One stopwatch for the whole class'},
+      q13:{'Teacher':'Teacher','SL':'SL','Support SL':'Support SL'},
+      q18:{'English':'English','Telugu':'Telugu','Both':'Both'},
+      q20:{'Yes':'Yes','No':'No','Not Applicable':'Not Applicable'}
+    },
+    scaleLabels: {
+      q3:['No Support SL was there','Worked as a normal student in a team','Helped with videos, timing, or managing students','Took full charge because main SL was absent','Something else'],
+      q4:['Had to run most of the session','Had to guide the SLs often','Gave a normal, steady amount of support','Helped only a little, when asked','Did not need to help — SLs ran the whole session'],
+      q9:['No, a lot of students were left behind','Many students were not able to follow together','Most students followed, but a few fell behind','Almost everyone followed, only one or two fell behind','Yes, every student followed — no one left behind'],
+      q10:['Almost all activities could not complete on time','Most activities finished later than planned','Some activities finished close to on time','Most activities finished close to on time','All activities finished right on time'],
+      sq1:['Very low, most students disengaged','Below average, engaged only occasionally','Moderate, engaged for parts of it','Good, engaged for most of it','Highly engaged throughout'],
+      sq2:['Very confused, needed things re-explained often','Somewhat confused, needed extra guidance','Understood with some clarification','Understood well, minimal clarification needed','Understood clearly and independently'],
+      sq3:['Could not complete most of it','Completed a small part','Completed most of it, with gaps','Completed it well','Completed fully and confidently'],
+      sq4:['Could not proceed without constant support','Heavy support, needed help throughout','Moderate support, needed regular help','Minimal support, asked once or twice','No support needed'],
+      sq5:['Did not understand at all','Understood only a little','Understood somewhat','Understood well','Understood very well'],
+      act_q1:['Students struggled a lot — could not really do it','Completed but needed a lot of help','Adequate, went okay','Good, went well with minor issues','Excellent, went very well']
+    }
+  },
+  te: {
+    ui: {
+      observing:'పరిశీలిస్తున్నారు', saveBtn:'డ్రాఫ్ట్ సేవ్ చేయండి', submitBtn:'పరిశీలన సమర్పించండి',
+      optional:'(ఐచ్ఛికం)', pleaseSpecify:'దయచేసి పేర్కొనండి…', pleaseDescribe:'దయచేసి వివరించండి…'
+    },
+    sections: {
+      'Attendance & Involvement':'హాజరు & భాగస్వామ్యం',
+      'Video Usage':'వీడియో వినియోగం',
+      'Timing & Pacing':'సమయం & వేగం',
+      'Outcomes':'ఫలితాలు',
+      'Workbook Photos':'వర్క్‌బుక్ ఫోటోలు',
+      'SL Guide Usage':'SL గైడ్ వినియోగం',
+      'Session Questions':'సెషన్ ప్రశ్నలు',
+      'Activity Questions':'కార్యకలాపం ప్రశ్నలు',
+      'Student Leaders':'విద్యార్థి నాయకులు',
+      'Standout Moments & Your Experience':'ప్రత్యేక క్షణాలు & మీ అనుభవం'
+    },
+    questions: {
+      'Q1':{text:'నేడు అన్ని విద్యార్థి నాయకులు (SLs) హాజరయ్యారా?',hint:''},
+      'Q2':{text:'ఒక SL లేకపోవడం వల్ల ఏమి జరిగింది?',hint:''},
+      'Q3':{text:'సెషన్‌కు ఎంత మంది విద్యార్థులు హాజరయ్యారు?',hint:''},
+      'Q4':{text:'నేడు సపోర్ట్ SL ఏమి చేశారు?',hint:'వారి పాత్రను అత్యుత్తమంగా వివరించే ఎంపికను ఎంచుకోండి.'},
+      'Q5_iif':{text:'టీచర్ మధ్యలో జోక్యం చేసుకోవలసిన అవసరం ఎంత ఉంది?',hint:'IIF పరిశీలకులు మీరు చూసిన దాని గురించి జవాబు ఇవ్వండి.'},
+      'Q5_school':{text:'టీచర్ మధ్యలో జోక్యం చేసుకోవలసిన అవసరం ఎంత ఉంది?',hint:'మీ గురించి జవాబు ఇవ్వండి.'},
+      'Q6':{text:'నేటి సెషన్‌లో వీడియోలు చూపించారా?',hint:''},
+      'Q7':{text:'నేడు వీడియో ఎందుకు చూపించలేదు?',hint:''},
+      'Q8':{text:'వీడియో ఎలా చూపించారు?',hint:''},
+      'Q9':{text:'వీడియో ఎవరు చూపించారు?',hint:''},
+      'Q10':{text:'అన్ని విద్యార్థులు కలిసి వీడియో చూసి అర్థం చేసుకోగలిగారా?',hint:''},
+      'Q11':{text:'సెషన్ కార్యకలాపాల సమయ ప్రణాళిక ఎంత బాగుంది?',hint:''},
+      'Q12':{text:'ఏదైనా కార్యకలాపానికి చాలా ఎక్కువ సహాయం లేదా శ్రద్ధ అవసరమైందా?',hint:'అవుననే చెప్పి, ఏమి జరిగిందో వివరించండి.'},
+      'Q13':{text:'సమయం పాటించడానికి మీరు ఏమి ఉపయోగించారు?',hint:''},
+      'Q14':{text:'సమయం పాటించే బాధ్యత ఎవరికి ఉంది?',hint:''},
+      'Q15':{text:'నేటి సెషన్ నుండి విద్యార్థులు పని చేస్తున్న ఫోటోలు లేదా వీడియోలను అప్‌లోడ్ చేయండి.',hint:''},
+      'Q16':{text:'ఐచ్ఛికం — ఏదైనా సూచనలు, ప్రత్యేక క్షణాలు లేదా మీకు చెప్పాలనిపించేది ఏదైనా?',hint:''},
+      'Q17_hint':'దిగువ జాబితా చేసిన విద్యార్థుల వర్క్‌బుక్ పేజీల ఫోటోలను అప్‌లోడ్ చేయండి. ఇవి నేటి సెషన్‌కు సంబంధించినవి.',
+      'Q18':{text:'సెషన్ సమయంలో విద్యార్థి నాయకులు SL గైడ్‌ను చురుకుగా వినియోగిస్తున్నారా?',hint:''},
+      'Q18b':{text:'SL గైడ్‌తో ఏమి బాగా జరిగింది మరియు ఏమి మెరుగుపరచవచ్చు?',hint:''},
+      'SQ1':{text:'మొత్తంగా సెషన్ సమయంలో విద్యార్థులు ఎంత నిమగ్నమయ్యారు?',hint:''},
+      'SQ2':{text:'విద్యార్థులు వారికి ఏమి చేయమని అడిగారో అది ఎంత బాగా అర్థమైంది?',hint:''},
+      'SQ3':{text:'విద్యార్థులు మొత్తంగా సెషన్ కార్యకలాపాలను ఎంత బాగా పూర్తి చేయగలిగారు?',hint:''},
+      'SQ4':{text:'విద్యార్థులకు SLs లేదా టీచర్ నుండి ఎంత మద్దతు అవసరమైంది?',hint:''},
+      'SQ5':{text:"నేటి ఫోకస్ స్కిల్‌ను విద్యార్థులు ఎంత బాగా అర్థం చేసుకున్నారు?",hint:''},
+      'SQ6':{text:"మీరు చూసింది వివరించండి — విద్యార్థులు నేటి ఫోకస్ స్కిల్‌ను ఎలా సాధన చేశారు?",hint:'ఉదా: SL స్కిల్ చిత్రం/లోగో ఉపయోగించారా, స్పష్టంగా వివరించారా, లేదా కార్యకలాపాన్ని స్కిల్‌తో జోడించారా?'},
+      'AQ1':{text:'మొత్తంగా, ఈ కార్యకలాపం ఎలా జరిగింది?',hint:''},
+      'AQ2':{text:'ఈ కార్యకలాపంపై ఏదైనా సూచనలు లేదా అభిప్రాయం?',hint:'సమయం, విద్యార్థుల నిమగ్నత, స్పష్టత, నైపుణ్యాలు లేదా జట్టుపని గురించి రాయండి.'},
+      'Q19':{text:'విద్యార్థి నాయకులు విషయాలు వివరించడానికి ప్రధానంగా ఏ భాష వాడారు?',hint:''},
+      'Q20':{text:'విద్యార్థి నాయకులు కార్యకలాపాలను ఎంత స్పష్టంగా వివరించగలిగారు?',hint:''},
+      'Q21':{text:'నేడు విద్యార్థి నాయకులు MMS కిట్ నుండి ఏదైనా మెటీరియల్‌లు వాడారా?',hint:''},
+      'Q21b':{text:'ఎందుకు వాడలేదు? ఏదైనా అభిప్రాయం:',hint:''},
+      'Q22':{text:'నేడు ఏదైనా విద్యార్థి లేదా SL ప్రత్యేకంగా ఏదైనా చేశారా లేదా మిమ్మల్ని ఆశ్చర్యపరచారా?',hint:'వారి పేరు మరియు వారు ఏమి చేశారో చెప్పండి.'},
+      'Q23':{text:"నేటి సెషన్ సమయంలో మీ స్వంత అనుభవం ఎలా ఉంది?",hint:'మీరు మాకు చెప్పాలనుకునే మరేదైనా పంచుకోండి.'},
+      'actHint':'నేటి సెషన్‌లోని ప్రతి వర్తించే కార్యకలాపానికి, అది ఎలా జరిగిందో రేటింగ్ ఇవ్వండి మరియు అభిప్రాయం పంచుకోండి.'
+    },
+    options: {
+      yn:{'Yes':'అవును','No':'కాదు','Other':'ఇతర'},
+      q2:{'The teacher ran the session instead':'బదులుగా టీచర్ సెషన్ నిర్వహించారు','Two groups were combined into one':'రెండు గ్రూపులను ఒకటిగా కలిపారు','A Support SL took over the session':'సపోర్ట్ SL సెషన్ నిర్వహించారు'},
+      q6:{'No internet or power':'ఇంటర్నెట్ లేదా కరెంట్ లేదు','Not enough time':'సమయం సరిపోలేదు','Problem with the pendrive or IFP screen':'పెన్‌డ్రైవ్ లేదా IFP స్క్రీన్‌తో సమస్య'},
+      q7:{'Pendrive & TV':'పెన్‌డ్రైవ్ & TV','IFP Panel (smart screen)':'IFP పానెల్ (స్మార్ట్ స్క్రీన్)','YouTube':'YouTube','Phone':'ఫోన్'},
+      q8:{'Student Leader':'విద్యార్థి నాయకుడు','Support SL':'సపోర్ట్ SL','Teacher':'టీచర్','A student':'ఒక విద్యార్థి'},
+      q12:{'Each SL had their own timer':'ప్రతి SL వారి స్వంత టైమర్ కలిగి ఉన్నారు','One shared timer on the table':'టేబుల్‌పై ఒక ఉమ్మడి టైమర్','One stopwatch for the whole class':'మొత్తం తరగతికి ఒక స్టాప్‌వాచ్'},
+      q13:{'Teacher':'టీచర్','SL':'SL','Support SL':'సపోర్ట్ SL'},
+      q18:{'English':'ఇంగ్లీష్','Telugu':'తెలుగు','Both':'రెండూ'},
+      q20:{'Yes':'అవును','No':'కాదు','Not Applicable':'వర్తించదు'}
+    },
+    scaleLabels: {
+      q3:['సపోర్ట్ SL అక్కడ లేరు','జట్టులో సాధారణ విద్యార్థిగా పని చేశారు','వీడియోలు, సమయం లేదా విద్యార్థులను నిర్వహించడంలో సహాయపడ్డారు','ప్రధాన SL లేనందున పూర్తి బాధ్యత తీసుకున్నారు','వేరే ఏదైనా'],
+      q4:['సెషన్‌లో చాలా భాగం నడిపించాల్సి వచ్చింది','SLలకు తరచుగా మార్గదర్శనం చేయాల్సి వచ్చింది','సాధారణ స్థాయి మద్దతు అందించారు','అడిగినప్పుడు మాత్రమే కొంచెం సహాయపడ్డారు','సహాయం అవసరం లేదు — SLలు మొత్తం సెషన్ నిర్వహించారు'],
+      q9:['చాలా మంది విద్యార్థులు వెనుకబడిపోయారు','చాలా మంది విద్యార్థులు కలిసి అనుసరించలేకపోయారు','చాలా మంది అనుసరించారు, కానీ కొందరు వెనుకబడ్డారు','దాదాపు అందరూ అనుసరించారు, ఒకటి రెండు మంది మాత్రమే వెనుకబడ్డారు','అవును, ప్రతి విద్యార్థి అనుసరించారు — ఎవరూ వెనుకబడలేదు'],
+      q10:['దాదాపు అన్ని కార్యకలాపాలు సమయానికి పూర్తి కాలేదు','చాలా కార్యకలాపాలు ప్రణాళిక కంటే ఆలస్యంగా పూర్తయ్యాయి','కొన్ని కార్యకలాపాలు సమయానికి దగ్గరగా పూర్తయ్యాయి','చాలా కార్యకలాపాలు సమయానికి దగ్గరగా పూర్తయ్యాయి','అన్ని కార్యకలాపాలు సరిగ్గా సమయానికి పూర్తయ్యాయి'],
+      sq1:['చాలా తక్కువ, చాలా మంది విద్యార్థులు నిమగ్నం కాలేదు','సగటు కంటే తక్కువ, అప్పుడప్పుడు మాత్రమే నిమగ్నమయ్యారు','మధ్యస్థంగా, కొంత భాగంలో నిమగ్నమయ్యారు','బాగా, చాలా భాగంలో నిమగ్నమయ్యారు','మొత్తం సమయం అత్యంత నిమగ్నంగా ఉన్నారు'],
+      sq2:['చాలా గందరగోళంగా ఉంది, తరచుగా మళ్ళీ వివరించాల్సి వచ్చింది','కొంత గందరగోళంగా ఉంది, అదనపు మార్గదర్శనం అవసరమైంది','కొంత స్పష్టీకరణతో అర్థమైంది','బాగా అర్థమైంది, కనీస స్పష్టీకరణ అవసరమైంది','స్పష్టంగా మరియు స్వతంత్రంగా అర్థమైంది'],
+      sq3:['చాలా భాగం పూర్తి చేయలేకపోయారు','చిన్న భాగం మాత్రమే పూర్తి చేశారు','చాలా భాగం పూర్తి చేశారు, కానీ కొన్ని అంతరాలు ఉన్నాయి','బాగా పూర్తి చేశారు','పూర్తిగా మరియు నమ్మకంగా పూర్తి చేశారు'],
+      sq4:['నిరంతర మద్దతు లేకుండా ముందుకు వెళ్ళలేకపోయారు','మొత్తం సమయం సహాయం అవసరమైంది','మధ్యస్థ మద్దతు, క్రమం తప్పకుండా సహాయం కావాల్సి వచ్చింది','కనీస మద్దతు, ఒకటి రెండు సార్లు మాత్రమే అడిగారు','మద్దతు అవసరం లేదు'],
+      sq5:['అస్సలు అర్థమైనట్లు లేదు','కొంచెం మాత్రమే అర్థమైంది','కొంత వరకు అర్థమైంది','బాగా అర్థమైంది','చాలా బాగా అర్థమైంది'],
+      act_q1:['విద్యార్థులు చాలా ఇబ్బంది పడ్డారు — నిజంగా చేయలేకపోయారు','చాలా సహాయంతో పూర్తి చేశారు','సరిగా ఉంది, ఓకే అయింది','బాగుంది, చిన్న సమస్యలతో జరిగింది','అద్భుతంగా, చాలా బాగా జరిగింది']
+    }
+  }
 };
 
 /* ============================================================
@@ -5344,6 +5513,8 @@ function soQ(name){ return `so_${name}`; }
 
 function soScale(name, n, labels, required, otherVal){
   const ov=otherVal?String(otherVal):'';
+  const m=name.match(/^act\d+_q(\d+)$/);
+  const i18nBase=m?'scaleLabels.act_q'+m[1]:'scaleLabels.'+name;
   const rows=Array.from({length:n},(_,i)=>{
     const v=i+1; const lbl=labels?labels[i]:'';
     return `<div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="soScaleClick(this.querySelector('.so-scale-btn'))">
@@ -5352,10 +5523,10 @@ function soScale(name, n, labels, required, otherVal){
         style="min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;
         border:2px solid var(--line);border-radius:10px;font-size:15px;font-weight:700;
         color:var(--navy);background:#fff;transition:all .2s;flex-shrink:0">${v}</div>
-      ${lbl?`<span style="font-size:14px;color:var(--ink);line-height:1.3">${lbl}</span>`:''}
+      ${lbl?`<span data-i18n="${i18nBase}.${i}" style="font-size:14px;color:var(--ink);line-height:1.3">${lbl}</span>`:''}
     </div>`;
   }).join('');
-  const otherInput=ov?`<input type="text" id="${soQ(name)}_other" placeholder="Please describe…" style="display:none;margin-top:6px" oninput="soSet('${name}',this.value||'${ov}')">` :'';
+  const otherInput=ov?`<input type="text" id="${soQ(name)}_other" data-i18n-ph="ui.pleaseDescribe" placeholder="Please describe…" style="display:none;margin-top:6px" oninput="soSet('${name}',this.value||'${ov}')">` :'';
   return `<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px" data-scale-group="${soQ(name)}" data-other-val="${ov}">${rows}</div>${otherInput}`;
 }
 
@@ -5383,8 +5554,8 @@ function soScaleClick(btn){
 
 function soYesNo(name, required){
   return `<div style="display:flex;gap:8px;margin-top:8px">
-    <button type="button" class="so-yn" data-name="${name}" data-val="Yes" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">Yes</button>
-    <button type="button" class="so-yn" data-name="${name}" data-val="No" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">No</button>
+    <button type="button" class="so-yn" data-name="${name}" data-val="Yes" data-i18n="options.yn.Yes" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">Yes</button>
+    <button type="button" class="so-yn" data-name="${name}" data-val="No" data-i18n="options.yn.No" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">No</button>
   </div>`;
 }
 function soYNClick(btn){
@@ -5405,11 +5576,13 @@ function soOptions(name, opts, multi, hasOther){
   const m=multi?'true':'false';
   const pills=opts.map(o=>`
     <button type="button" class="so-opt" data-name="${name}" data-val="${o}" data-multi="${m}"
+      data-i18n="options.${name}.${o}"
       onclick="soOptClick(this)">${o}</button>`).join('');
   const other=hasOther?`
     <button type="button" class="so-opt" data-name="${name}" data-val="Other" data-multi="${m}"
+      data-i18n="options.yn.Other"
       onclick="soOptClick(this)">Other</button>
-    <input type="text" id="${soQ(name)}_other" placeholder="Please specify…" style="display:none;margin-top:6px"
+    <input type="text" id="${soQ(name)}_other" data-i18n-ph="ui.pleaseSpecify" placeholder="Please specify…" style="display:none;margin-top:6px"
       oninput="soOptSync('${name}','${m}')">` : '';
   return `<div style="margin-top:8px" data-opts-group="${name}">${pills}${other}</div>`;
 }
@@ -5479,16 +5652,50 @@ function soMultiFileChanged(id, input){
 }
 
 function soSec(tag, title){
-  return `<div class="card" style="margin-top:12px"><div class="sec-title"><span class="tag">${tag}</span> ${title}</div>`;
+  return `<div class="card" style="margin-top:12px"><div class="sec-title"><span class="tag">${tag}</span> <span data-i18n="sections.${title}">${title}</span></div>`;
 }
 
 function soLabel(q, text, required, hint, isOptional){
-  const badge=required?'<span class="req">*</span>':isOptional?'<span style="font-size:11px;color:var(--ok);font-weight:600;margin-left:6px">(Optional)</span>':'';
-  return `<label style="margin-top:12px;font-weight:700;color:var(--navy)">${q?q+'. ':''}${text}${badge}</label>${hint?`<div class="hint">${hint}</div>`:''}`;
+  const badge=required?'<span class="req">*</span>':isOptional?`<span data-i18n="ui.optional" style="font-size:11px;color:var(--ok);font-weight:600;margin-left:6px">(Optional)</span>`:'';
+  const i18nKey=q?`questions.${q}.text`:'';
+  const hintKey=q?`questions.${q}.hint`:'';
+  const textSpan=i18nKey?`<span data-i18n="${i18nKey}">${text}</span>`:text;
+  const hintHtml=hint?(hintKey?`<div class="hint" data-i18n="${hintKey}">${hint}</div>`:`<div class="hint">${hint}</div>`):'';
+  return `<label style="margin-top:12px;font-weight:700;color:var(--navy)">${q?q+'. ':''}${textSpan}${badge}</label>${hintHtml}`;
 }
 
 function soConditional(ifQ, ifVal, inner){
   return `<div data-show-if-q="${ifQ}" data-show-if-val="${ifVal}" style="display:none">${inner}</div>`;
+}
+
+function soResolveI18n(T, dotPath){
+  return dotPath.split('.').reduce((o,k)=>(o&&o[k]!==undefined?o[k]:undefined), T);
+}
+
+function applySoTranslations(lang){
+  const T=SO_TRANSLATIONS[lang]; if(!T) return;
+  document.querySelectorAll('#soFormContent [data-i18n], #soContextBar [data-i18n]').forEach(el=>{
+    const val=soResolveI18n(T, el.dataset.i18n);
+    if(typeof val==='string') el.textContent=val;
+  });
+  document.querySelectorAll('#soFormContent [data-i18n-ph]').forEach(el=>{
+    const val=soResolveI18n(T, el.dataset.i18nPh);
+    if(val) el.placeholder=val;
+  });
+  const tu=T.ui;
+  if(tu){
+    const db=$('soDraftBtn'); if(db) db.textContent=tu.saveBtn;
+    const sb=$('soSubmitBtn'); if(sb) sb.textContent=tu.submitBtn;
+  }
+  document.querySelectorAll('.so-lang-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.lang===lang);
+  });
+}
+
+function setSoLang(lang){
+  soLang=lang;
+  localStorage.setItem('tm_so_lang', lang);
+  applySoTranslations(lang);
 }
 
 async function initSessionObsForm(){
@@ -5523,7 +5730,8 @@ function renderSessionObsForm(){
   html+=`<input type="number" id="${soQ('q3Attendance')}" min="0" inputmode="numeric" style="margin-top:8px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;width:100%;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--navy)" oninput="soSet('q3Attendance',this.value)" placeholder="0">`;
   html+=soLabel('Q4','What did the Support SL do today?',true,'Select the option that best describes their role today.',false);
   html+=soScale('q3',5,['No Support SL was there','Worked as a normal student in a team','Helped with videos, timing, or managing students','Took full charge because main SL was absent','Something else'],false,5);
-  html+=soLabel('Q5','How much did the Teacher need to step in and help?',true,isIIF?'IIF Observers answer about what you saw.':'Answer about yourself.');
+  const q5key=isIIF?'Q5_iif':'Q5_school';
+  html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)">Q5. <span data-i18n="questions.${q5key}.text">How much did the Teacher need to step in and help?</span><span class="req">*</span></label><div class="hint" data-i18n="questions.${q5key}.hint">${isIIF?'IIF Observers answer about what you saw.':'Answer about yourself.'}</div>`;
   html+=soScale('q4',5,['Had to run most of the session','Had to guide the SLs often','Gave a normal, steady amount of support','Helped only a little, when asked','Did not need to help — SLs ran the whole session'],true);
   html+='</div>';
 
@@ -5568,7 +5776,7 @@ function renderSessionObsForm(){
   // S5: Workbook photos (all roles)
   if(SO_TEACHER_UPLOADS[key]){
     html+=soSec('5','Workbook Photos');
-    html+=`<p class="hint" style="margin:0 0 8px">Q17 — Please upload photos of the students' workbook pages listed below. These match today's session.</p>`;
+    html+=`<p class="hint" data-i18n="questions.Q17_hint" style="margin:0 0 8px">Q17 — Please upload photos of the students' workbook pages listed below. These match today's session.</p>`;
     SO_TEACHER_UPLOADS[key].forEach((up,i)=>{
       html+=soLabel('Q17.'+(i+1), up.text, true, '', false);
       html+=soMultiFileInput('so_q16_'+(i+1), up.accept, 'Choose files or take photos');
@@ -5582,10 +5790,10 @@ function renderSessionObsForm(){
     html+=soSec('IIF','SL Guide Usage');
     html+=soLabel('Q18','Were the Student Leaders actively using the SL Guide during the session?',true,'',false);
     html+=`<div style="display:flex;gap:8px;margin-top:8px">
-      <button type="button" class="so-yn" data-name="q17a" data-val="Yes" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">Yes</button>
-      <button type="button" class="so-yn" data-name="q17a" data-val="No" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">No</button>
+      <button type="button" class="so-yn" data-name="q17a" data-val="Yes" data-i18n="options.yn.Yes" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">Yes</button>
+      <button type="button" class="so-yn" data-name="q17a" data-val="No" data-i18n="options.yn.No" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">No</button>
     </div>`;
-    html+=soLabel('','What worked well with SL Guide, and what could be better?',true,'',false);
+    html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)"><span data-i18n="questions.Q18b.text">What worked well with SL Guide, and what could be better?</span><span class="req">*</span></label>`;
     html+=`<textarea id="${soQ('q17b')}" rows="2" style="margin-top:8px" oninput="soSet('q17b',this.value)"></textarea>`;
     html+='</div>';
 
@@ -5611,7 +5819,7 @@ function renderSessionObsForm(){
 
     // S8: Activity Questions
     html+=soSec('IIF','Activity Questions');
-    html+=`<p class="hint" style="margin:0 0 12px">For each applicable activity in today's session, rate how it went and share feedback.</p>`;
+    html+=`<p class="hint" data-i18n="questions.actHint" style="margin:0 0 12px">For each applicable activity in today's session, rate how it went and share feedback.</p>`;
     const naList=(SO_ACTIVITY_NA[key]||[6]); // always skip 6 at minimum
     const extras=(SO_ACTIVITY_EXTRAS[key]||{});
     for(let act=1;act<=5;act++){
@@ -5647,7 +5855,7 @@ function renderSessionObsForm(){
     html+=soLabel('Q21','Did the Student Leaders use any materials from the MMS kit today?',true,'',false);
     html+=soOptions('q20',['Yes','No','Not Applicable'],false,false);
     html+=soConditional('q20','No',
-      soLabel('','Why not? Any Feedback:',true)+
+      `<label style="margin-top:12px;font-weight:700;color:var(--navy)"><span data-i18n="questions.Q21b.text">Why not? Any Feedback:</span><span class="req">*</span></label>`+
       `<textarea id="${soQ('q20_feedback')}" rows="2" style="margin-top:8px" oninput="soSet('q20_feedback',this.value)"></textarea>`
     );
     html+='</div>';
@@ -5663,6 +5871,7 @@ function renderSessionObsForm(){
 
   $('soFormContent').innerHTML=html;
   soRestoreDraft();
+  applySoTranslations(soLang);
 }
 
 /* ============================================================
