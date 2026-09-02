@@ -3732,7 +3732,7 @@ async function loadTeluguFont(){
   return false;
 }
 
-function renderTeluguCell(text, colWidthMm, lineHmm){
+function renderTeluguCell(text, colWidthMm, lineHmm, color){
   const pxPerMm=96/25.4, fontPx=11, scale=2;
   const maxWpx=colWidthMm*pxPerMm;
   const lineHpx=fontPx*1.6;
@@ -3752,7 +3752,7 @@ function renderTeluguCell(text, colWidthMm, lineHmm){
   const ctx=canvas.getContext('2d');
   ctx.scale(scale,scale);
   ctx.font=fontPx+'px "Noto Sans Telugu"';
-  ctx.fillStyle='#282828';
+  ctx.fillStyle=color||'#282828';
   lines.forEach((ln,i)=>ctx.fillText(ln,0,(i+1)*lineHpx-fontPx*0.25));
   return { dataUri:canvas.toDataURL('image/png'), heightMm:lines.length*lineHpx/pxPerMm, lineCount:lines.length };
 }
@@ -3794,7 +3794,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     doc.setFont('helvetica','bold'); doc.setFontSize(fs); doc.setTextColor(255,255,255);
     doc.text('Reflective Questions',ml+3,y+4.8);
     if(teluguAvailable){
-      const subImg=renderTeluguCell('ప్రతిబింబ ప్రశ్నలు',colW-7,lineH);
+      const subImg=renderTeluguCell('ప్రతిబింబ ప్రశ్నలు',colW-7,lineH,'#ffffff');
       if(subImg){ try{ doc.addImage(subImg.dataUri,'PNG',telX+2,y+1,colW-5,Math.min(subImg.heightMm,subH-1)); }catch(e){} }
     } else {
       doc.text('ప్రతిబింబ ప్రశ్నలు',telX+3,y+4.8);
