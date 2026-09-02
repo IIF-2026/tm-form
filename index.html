@@ -3661,7 +3661,16 @@ function renderBuddyFeedback(text){
 // -------- INQUI BUDDY — PDF HELPERS --------
 
 function extractBuddyQuestions(feedbackText){
-  // New bilingual format: ENGLISH: ... TELUGU: ...
+  // New format: ENGLISH_QUESTIONS:
+  const newIdx=feedbackText.indexOf('ENGLISH_QUESTIONS:');
+  if(newIdx!==-1){
+    const after=feedbackText.slice(newIdx+18);
+    const end=after.search(/\n\n?[A-Z_]+:/);
+    const section=end!==-1?after.slice(0,end):after;
+    const qs=section.trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+    if(qs.length) return qs;
+  }
+  // Old bilingual format: ENGLISH: ... TELUGU: ...
   const engIdx=feedbackText.indexOf('ENGLISH:');
   if(engIdx!==-1){
     const telIdx=feedbackText.indexOf('TELUGU:',engIdx);
@@ -3679,9 +3688,29 @@ function extractBuddyQuestions(feedbackText){
 }
 
 function extractTeluguQuestions(feedbackText){
+  // New format: TELUGU_QUESTIONS:
+  const newIdx=feedbackText.indexOf('TELUGU_QUESTIONS:');
+  if(newIdx!==-1){
+    const after=feedbackText.slice(newIdx+17);
+    const end=after.search(/\n\n?[A-Z_]+:/);
+    const section=end!==-1?after.slice(0,end):after;
+    const qs=section.trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+    if(qs.length) return qs;
+  }
+  // Old format: TELUGU:
   const idx=feedbackText.indexOf('TELUGU:');
   if(idx===-1) return [];
   return feedbackText.slice(idx+7).trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+}
+
+function extractBuddyIntro(feedbackText){
+  const m=feedbackText.match(/ENGLISH_INTRO:\s*([\s\S]*?)(?:\n\n?ENGLISH_QUESTIONS:)/);
+  return m?m[1].trim():'';
+}
+
+function extractTeluguIntro(feedbackText){
+  const m=feedbackText.match(/TELUGU_INTRO:\s*([\s\S]*?)(?:\n\n?TELUGU_QUESTIONS:|$)/);
+  return m?m[1].trim():'';
 }
 
 async function loadTeluguFont(){
@@ -3728,7 +3757,7 @@ function renderTeluguCell(text, colWidthMm, lineHmm){
   return { dataUri:canvas.toDataURL('image/png'), heightMm:lines.length*lineHpx/pxPerMm, lineCount:lines.length };
 }
 
-async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY){
+async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, engIntro, telIntro){
   const ml=12, colW=88, gap=10, rowPad=3, lineH=5.2, fs=8.5;
   const telX=ml+colW+gap;
   // Table header
@@ -3737,6 +3766,41 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY){
   doc.setFont('helvetica','bold'); doc.setFontSize(fs); doc.setTextColor(255,255,255);
   doc.text('English',ml+3,tableY+5.5); doc.text('Telugu',telX+3,tableY+5.5);
   let y=tableY+8;
+
+  // Intro paragraph row (only if intro text exists)
+  if(engIntro){
+    const introLines=doc.setFont('helvetica','normal').setFontSize(fs).splitTextToSize(engIntro,colW-6);
+    let telIntroImg=null;
+    if(teluguAvailable && telIntro){
+      try{ telIntroImg=renderTeluguCell(telIntro,colW-7,lineH); }catch(e){}
+    }
+    const telIntroLineCount=telIntroImg?telIntroImg.lineCount:introLines.length;
+    const introRowH=Math.max(introLines.length,telIntroLineCount)*lineH+rowPad*2;
+    // Light warm background for intro
+    doc.setFillColor(240,247,240);
+    doc.rect(ml,y,colW,introRowH,'F'); doc.rect(telX,y,colW,introRowH,'F');
+    doc.setDrawColor(200,210,215); doc.rect(ml,y,colW,introRowH); doc.rect(telX,y,colW,introRowH);
+    doc.setFont('helvetica','normal'); doc.setFontSize(fs); doc.setTextColor(40,40,40);
+    doc.text(introLines,ml+3,y+rowPad+lineH*0.8);
+    if(telIntroImg){
+      try{ doc.addImage(telIntroImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telIntroImg.heightMm,introRowH-rowPad)); }catch(e){}
+    }
+    y+=introRowH;
+
+    // "Reflective Questions" sub-header row
+    const subH=7;
+    doc.setFillColor(26,95,122);
+    doc.rect(ml,y,colW,subH,'F'); doc.rect(telX,y,colW,subH,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(fs); doc.setTextColor(255,255,255);
+    doc.text('Reflective Questions',ml+3,y+4.8);
+    if(teluguAvailable){
+      const subImg=renderTeluguCell('ప్రతిబింబ ప్రశ్నలు',colW-7,lineH);
+      if(subImg){ try{ doc.addImage(subImg.dataUri,'PNG',telX+2,y+1,colW-5,Math.min(subImg.heightMm,subH-1)); }catch(e){} }
+    } else {
+      doc.text('ప్రతిబింబ ప్రశ్నలు',telX+3,y+4.8);
+    }
+    y+=subH;
+  }
 
   for(let i=0;i<engQs.length;i++){
     const engText=(i+1)+'. '+engQs[i];
@@ -3770,6 +3834,8 @@ async function downloadBuddyPDF(){
   const engQs=extractBuddyQuestions(buddyState.feedback);
   if(!engQs.length){ toast('No feedback questions found.'); return; }
   const telQs=extractTeluguQuestions(buddyState.feedback);
+  const engIntro=extractBuddyIntro(buddyState.feedback);
+  const telIntro=extractTeluguIntro(buddyState.feedback);
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
@@ -3829,7 +3895,7 @@ async function downloadBuddyPDF(){
   doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
 
   // Questions table
-  await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5);
+  await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5,engIntro,telIntro);
 
   // Footer
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
@@ -4665,6 +4731,8 @@ async function sbDownloadTeamPDF(teamCode){
   const engQs=extractBuddyQuestions(team.feedbackText);
   if(!engQs.length){ toast('No feedback questions found for Team '+teamCode+'.'); return; }
   const telQs=extractTeluguQuestions(team.feedbackText);
+  const engIntro=extractBuddyIntro(team.feedbackText);
+  const telIntro=extractTeluguIntro(team.feedbackText);
 
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
@@ -4756,7 +4824,7 @@ async function sbDownloadTeamPDF(teamCode){
   doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
 
   // Questions table
-  await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5);
+  await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5,engIntro,telIntro);
 
   // Footer
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
@@ -4788,6 +4856,8 @@ async function sbDownloadAllPDF(){
 
     const engQs=extractBuddyQuestions(team.feedbackText);
     const telQs=extractTeluguQuestions(team.feedbackText);
+    const engIntro=extractBuddyIntro(team.feedbackText);
+    const telIntro=extractTeluguIntro(team.feedbackText);
 
     // Header band
     doc.setFillColor(13,59,74); doc.rect(0,0,pageW,28,'F');
@@ -4869,7 +4939,7 @@ async function sbDownloadAllPDF(){
     doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
 
     // Questions table
-    await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5);
+    await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5,engIntro,telIntro);
   }
 
   // Page numbers
