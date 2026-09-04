@@ -3826,6 +3826,27 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     }
     y+=rowH;
   }
+
+  // Instruction row below all questions
+  const engInstr='Discuss these questions with your team, improve your idea, and redraw your final idea.';
+  const telInstr='ఈ ప్రశ్నలను మీ టీమ్‌తో చర్చించి, మీ ఆలోచనలో మార్పులు చేసి, చివరి ఆలోచనను మళ్లీ గీయండి (Draw cheyandi).';
+  const instrLines=doc.setFont('helvetica','italic').setFontSize(fs).splitTextToSize(engInstr,colW-6);
+  let telInstrImg=null;
+  if(teluguAvailable){
+    try{ telInstrImg=renderTeluguCell(telInstr,colW-7,lineH,'#5d4000'); }catch(e){}
+  }
+  const telInstrLineCount=telInstrImg?telInstrImg.lineCount:instrLines.length;
+  const instrRowH=Math.max(instrLines.length,telInstrLineCount)*lineH+rowPad*2+2;
+  doc.setFillColor(255,248,225);
+  doc.rect(ml,y,colW,instrRowH,'F'); doc.rect(telX,y,colW,instrRowH,'F');
+  doc.setDrawColor(249,168,37); doc.rect(ml,y,colW,instrRowH); doc.rect(telX,y,colW,instrRowH);
+  doc.setFont('helvetica','italic'); doc.setFontSize(fs); doc.setTextColor(93,64,0);
+  doc.text(instrLines,ml+3,y+rowPad+lineH*0.8);
+  if(telInstrImg){
+    try{ doc.addImage(telInstrImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telInstrImg.heightMm,instrRowH-rowPad)); }catch(e){}
+  }
+  y+=instrRowH;
+
   return y;
 }
 
