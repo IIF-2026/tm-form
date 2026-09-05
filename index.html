@@ -5101,18 +5101,18 @@ const SO_TRANSLATIONS = {
     },
     questions: {
       'Q1':{text:'Were all the Student Leaders (SLs) present today?',hint:''},
-      'Q2':{text:'What happened because an SL was absent?',hint:''},
+      'Q2':{text:'Who taught the group/cluster if their SL was absent?',hint:''},
       'Q3':{text:'How many students attended the session?',hint:''},
-      'Q4':{text:'What did the Support SL do today?',hint:'Select the option that best describes their role today.'},
-      'Q5_iif':{text:'How much did the Teacher need to step in and help?',hint:'IIF Observers answer about what you saw.'},
-      'Q5_school':{text:'How much did the Teacher need to step in and help?',hint:'Answer about yourself.'},
+      'Q4':{text:'What did the Support SL do today?',hint:''},
+      'Q5_iif':{text:'What did the Teacher need to help during the session?',hint:''},
+      'Q5_school':{text:'What did the Teacher need to help during the session?',hint:''},
       'Q6':{text:'Were videos played in the session today?',hint:''},
-      'Q7':{text:'Why was no video played today?',hint:''},
+      'Q7':{text:'What problems did you face during the playing of the video?',hint:''},
       'Q8':{text:'How was the video played?',hint:''},
       'Q9':{text:'Who played the video?',hint:''},
-      'Q10':{text:'Were all students able to watch and follow the video together?',hint:''},
-      'Q11':{text:'How well was the timing of the session activities planned?',hint:''},
-      'Q12':{text:'Was there one activity that needed much more help or attention?',hint:'If yes, name it and tell us what happened.'},
+      'Q10':{text:'How many students could watch and understand the video at the same time?',hint:''},
+      'Q11':{text:'How was the timing of the session activities planned?',hint:''},
+      'Q12':{text:'Was there any activity that was difficult to complete on time?',hint:'If yes, name it and tell us what happened.'},
       'Q13':{text:'What did you use to keep time?',hint:''},
       'Q14':{text:'Who was in charge of keeping time?',hint:''},
       'Q15':{text:"Please upload photos or videos of students working from today's session.",hint:''},
@@ -5138,8 +5138,10 @@ const SO_TRANSLATIONS = {
     },
     options: {
       yn:{'Yes':'Yes','No':'No','Other':'Other'},
-      q2:{'The teacher ran the session instead':'The teacher ran the session instead','Two groups were combined into one':'Two groups were combined into one','A Support SL took over the session':'A Support SL took over the session'},
-      q6:{'No internet or power':'No internet or power','Not enough time':'Not enough time','Problem with the pendrive or IFP screen':'Problem with the pendrive or IFP screen'},
+      q2:{'The teacher taught the group/cluster instead':'The teacher taught the group/cluster instead','Two groups were combined into one':'Two groups were combined into one','A Support SL taught the group/cluster':'A Support SL taught the group/cluster'},
+      q3:{'No Support SL was there today':'No Support SL was there today','The Support SL worked as a normal student in a team':'The Support SL worked as a normal student in a team','The Support SL helped with videos, timing, or managing students':'The Support SL helped with videos, timing, or managing students','The Support SL took full charge of one group/cluster because the main SL was absent':'The Support SL took full charge of one group/cluster because the main SL was absent'},
+      q4:{'Management of Student behaviour':'Management of Student behaviour','Video Playing':'Video Playing','Doubt Clearing':'Doubt Clearing','Explain Activities/concepts':'Explain Activities/concepts','Distributed Books/Materials':'Distributed Books/Materials'},
+      q6:{'No problems':'No problems','No internet or power':'No internet or power','Not enough time':'Not enough time','Problem with the pendrive or the IFP screen (smart screen)':'Problem with the pendrive or the IFP screen (smart screen)'},
       q7:{'Pendrive & TV':'Pendrive & TV','IFP Panel (smart screen)':'IFP Panel (smart screen)','YouTube':'YouTube','Phone':'Phone'},
       q8:{'Student Leader':'Student Leader','Support SL':'Support SL','Teacher':'Teacher','A student':'A student'},
       q12:{'Each SL had their own timer':'Each SL had their own timer','One shared timer on the table':'One shared timer on the table','One stopwatch for the whole class':'One stopwatch for the whole class'},
@@ -5148,10 +5150,8 @@ const SO_TRANSLATIONS = {
       q20:{'Yes':'Yes','No':'No','Not Applicable':'Not Applicable'}
     },
     scaleLabels: {
-      q3:['No Support SL was there','Worked as a normal student in a team','Helped with videos, timing, or managing students','Took full charge because main SL was absent','Something else'],
-      q4:['Had to run most of the session','Had to guide the SLs often','Gave a normal, steady amount of support','Helped only a little, when asked','Did not need to help — SLs ran the whole session'],
-      q9:['No, a lot of students were left behind','Many students were not able to follow together','Most students followed, but a few fell behind','Almost everyone followed, only one or two fell behind','Yes, every student followed — no one left behind'],
-      q10:['Almost all activities could not complete on time','Most activities finished later than planned','Some activities finished close to on time','Most activities finished close to on time','All activities finished right on time'],
+      q9:['None — no student could understand and follow','Few — only a few students could understand and follow','Many — many students could understand and follow','Most — most students could understand and follow','All — all students could follow understand and follow'],
+      q10:['None — no activity finished on time','Few — only a few activities finished on time','Many — many activities finished on time','Most — most activities finished on time','All — all activities finished on time'],
       sq1:['Very low, most students disengaged','Below average, engaged only occasionally','Moderate, engaged for parts of it','Good, engaged for most of it','Highly engaged throughout'],
       sq2:['Very confused, needed things re-explained often','Somewhat confused, needed extra guidance','Understood with some clarification','Understood well, minimal clarification needed','Understood clearly and independently'],
       sq3:['Could not complete most of it','Completed a small part','Completed most of it, with gaps','Completed it well','Completed fully and confidently'],
@@ -5216,18 +5216,18 @@ const SO_TRANSLATIONS = {
     },
     questions: {
       'Q1':{text:'నేడు అన్ని విద్యార్థి నాయకులు (SLs) హాజరయ్యారా?',hint:''},
-      'Q2':{text:'ఒక SL లేకపోవడం వల్ల ఏమి జరిగింది?',hint:''},
+      'Q2':{text:'వారి SL లేనప్పుడు గ్రూప్/క్లస్టర్‌ను ఎవరు నేర్పించారు?',hint:''},
       'Q3':{text:'సెషన్‌కు ఎంత మంది విద్యార్థులు హాజరయ్యారు?',hint:''},
-      'Q4':{text:'నేడు సపోర్ట్ SL ఏమి చేశారు?',hint:'వారి పాత్రను అత్యుత్తమంగా వివరించే ఎంపికను ఎంచుకోండి.'},
-      'Q5_iif':{text:'టీచర్ మధ్యలో జోక్యం చేసుకోవలసిన అవసరం ఎంత ఉంది?',hint:'IIF పరిశీలకులు మీరు చూసిన దాని గురించి జవాబు ఇవ్వండి.'},
-      'Q5_school':{text:'టీచర్ మధ్యలో జోక్యం చేసుకోవలసిన అవసరం ఎంత ఉంది?',hint:'మీ గురించి జవాబు ఇవ్వండి.'},
+      'Q4':{text:'నేడు సపోర్ట్ SL ఏమి చేశారు?',hint:''},
+      'Q5_iif':{text:'సెషన్ సమయంలో టీచర్ ఏ విషయాల్లో సహాయం చేయాల్సి వచ్చింది?',hint:''},
+      'Q5_school':{text:'సెషన్ సమయంలో టీచర్ ఏ విషయాల్లో సహాయం చేయాల్సి వచ్చింది?',hint:''},
       'Q6':{text:'నేటి సెషన్‌లో వీడియోలు చూపించారా?',hint:''},
-      'Q7':{text:'నేడు వీడియో ఎందుకు చూపించలేదు?',hint:''},
+      'Q7':{text:'వీడియో చూపించే సమయంలో మీకు ఏ సమస్యలు ఎదురయ్యాయి?',hint:''},
       'Q8':{text:'వీడియో ఎలా చూపించారు?',hint:''},
       'Q9':{text:'వీడియో ఎవరు చూపించారు?',hint:''},
-      'Q10':{text:'అన్ని విద్యార్థులు కలిసి వీడియో చూసి అర్థం చేసుకోగలిగారా?',hint:''},
-      'Q11':{text:'సెషన్ కార్యకలాపాల సమయ ప్రణాళిక ఎంత బాగుంది?',hint:''},
-      'Q12':{text:'ఏదైనా కార్యకలాపానికి చాలా ఎక్కువ సహాయం లేదా శ్రద్ధ అవసరమైందా?',hint:'అవుననే చెప్పి, ఏమి జరిగిందో వివరించండి.'},
+      'Q10':{text:'ఒకేసారి వీడియో చూసి అర్థం చేసుకోగలిగిన విద్యార్థులు ఎంత మంది?',hint:''},
+      'Q11':{text:'సెషన్ కార్యకలాపాల సమయ ప్రణాళిక ఎలా ఉంది?',hint:''},
+      'Q12':{text:'సమయానికి పూర్తి చేయడం కష్టంగా ఉన్న కార్యకలాపమేదైనా ఉందా?',hint:'అవుననే చెప్పి, ఏమి జరిగిందో వివరించండి.'},
       'Q13':{text:'సమయం పాటించడానికి మీరు ఏమి ఉపయోగించారు?',hint:''},
       'Q14':{text:'సమయం పాటించే బాధ్యత ఎవరికి ఉంది?',hint:''},
       'Q15':{text:'నేటి సెషన్ నుండి విద్యార్థులు పని చేస్తున్న ఫోటోలు లేదా వీడియోలను అప్‌లోడ్ చేయండి.',hint:''},
@@ -5253,8 +5253,10 @@ const SO_TRANSLATIONS = {
     },
     options: {
       yn:{'Yes':'అవును','No':'కాదు','Other':'ఇతర'},
-      q2:{'The teacher ran the session instead':'బదులుగా టీచర్ సెషన్ నిర్వహించారు','Two groups were combined into one':'రెండు గ్రూపులను ఒకటిగా కలిపారు','A Support SL took over the session':'సపోర్ట్ SL సెషన్ నిర్వహించారు'},
-      q6:{'No internet or power':'ఇంటర్నెట్ లేదా కరెంట్ లేదు','Not enough time':'సమయం సరిపోలేదు','Problem with the pendrive or IFP screen':'పెన్‌డ్రైవ్ లేదా IFP స్క్రీన్‌తో సమస్య'},
+      q2:{'The teacher taught the group/cluster instead':'బదులుగా టీచర్ గ్రూప్/క్లస్టర్‌ను నేర్పించారు','Two groups were combined into one':'రెండు గ్రూపులను ఒకటిగా కలిపారు','A Support SL taught the group/cluster':'సపోర్ట్ SL గ్రూప్/క్లస్టర్‌ను నేర్పించారు'},
+      q3:{'No Support SL was there today':'నేడు సపోర్ట్ SL అక్కడ లేరు','The Support SL worked as a normal student in a team':'సపోర్ట్ SL జట్టులో సాధారణ విద్యార్థిగా పని చేశారు','The Support SL helped with videos, timing, or managing students':'సపోర్ట్ SL వీడియోలు, సమయం లేదా విద్యార్థులను నిర్వహించడంలో సహాయపడ్డారు','The Support SL took full charge of one group/cluster because the main SL was absent':'ప్రధాన SL లేనందున సపోర్ట్ SL ఒక గ్రూప్/క్లస్టర్ పూర్తి బాధ్యత తీసుకున్నారు'},
+      q4:{'Management of Student behaviour':'విద్యార్థుల ప్రవర్తన నిర్వహణ','Video Playing':'వీడియో ప్లే చేయడం','Doubt Clearing':'సందేహాలు తీర్చడం','Explain Activities/concepts':'కార్యకలాపాలు/భావనలు వివరించడం','Distributed Books/Materials':'పుస్తకాలు/సామగ్రి పంపిణీ'},
+      q6:{'No problems':'ఎటువంటి సమస్యలు లేవు','No internet or power':'ఇంటర్నెట్ లేదా కరెంట్ లేదు','Not enough time':'సమయం సరిపోలేదు','Problem with the pendrive or the IFP screen (smart screen)':'పెన్‌డ్రైవ్ లేదా IFP స్క్రీన్ (స్మార్ట్ స్క్రీన్)తో సమస్య'},
       q7:{'Pendrive & TV':'పెన్‌డ్రైవ్ & TV','IFP Panel (smart screen)':'IFP పానెల్ (స్మార్ట్ స్క్రీన్)','YouTube':'YouTube','Phone':'ఫోన్'},
       q8:{'Student Leader':'విద్యార్థి నాయకుడు','Support SL':'సపోర్ట్ SL','Teacher':'టీచర్','A student':'ఒక విద్యార్థి'},
       q12:{'Each SL had their own timer':'ప్రతి SL వారి స్వంత టైమర్ కలిగి ఉన్నారు','One shared timer on the table':'టేబుల్‌పై ఒక ఉమ్మడి టైమర్','One stopwatch for the whole class':'మొత్తం తరగతికి ఒక స్టాప్‌వాచ్'},
@@ -5263,10 +5265,8 @@ const SO_TRANSLATIONS = {
       q20:{'Yes':'అవును','No':'కాదు','Not Applicable':'వర్తించదు'}
     },
     scaleLabels: {
-      q3:['సపోర్ట్ SL అక్కడ లేరు','జట్టులో సాధారణ విద్యార్థిగా పని చేశారు','వీడియోలు, సమయం లేదా విద్యార్థులను నిర్వహించడంలో సహాయపడ్డారు','ప్రధాన SL లేనందున పూర్తి బాధ్యత తీసుకున్నారు','వేరే ఏదైనా'],
-      q4:['సెషన్‌లో చాలా భాగం నడిపించాల్సి వచ్చింది','SLలకు తరచుగా మార్గదర్శనం చేయాల్సి వచ్చింది','సాధారణ స్థాయి మద్దతు అందించారు','అడిగినప్పుడు మాత్రమే కొంచెం సహాయపడ్డారు','సహాయం అవసరం లేదు — SLలు మొత్తం సెషన్ నిర్వహించారు'],
-      q9:['చాలా మంది విద్యార్థులు వెనుకబడిపోయారు','చాలా మంది విద్యార్థులు కలిసి అనుసరించలేకపోయారు','చాలా మంది అనుసరించారు, కానీ కొందరు వెనుకబడ్డారు','దాదాపు అందరూ అనుసరించారు, ఒకటి రెండు మంది మాత్రమే వెనుకబడ్డారు','అవును, ప్రతి విద్యార్థి అనుసరించారు — ఎవరూ వెనుకబడలేదు'],
-      q10:['దాదాపు అన్ని కార్యకలాపాలు సమయానికి పూర్తి కాలేదు','చాలా కార్యకలాపాలు ప్రణాళిక కంటే ఆలస్యంగా పూర్తయ్యాయి','కొన్ని కార్యకలాపాలు సమయానికి దగ్గరగా పూర్తయ్యాయి','చాలా కార్యకలాపాలు సమయానికి దగ్గరగా పూర్తయ్యాయి','అన్ని కార్యకలాపాలు సరిగ్గా సమయానికి పూర్తయ్యాయి'],
+      q9:['ఎవరూ లేరు — ఏ విద్యార్థీ అర్థం చేసుకుని అనుసరించలేకపోయారు','కొద్ది మంది — కొంత మంది విద్యార్థులు మాత్రమే అర్థం చేసుకున్నారు','చాలా మంది — చాలా మంది విద్యార్థులు అర్థం చేసుకున్నారు','చాలా ఎక్కువ మంది — చాలా ఎక్కువ మంది అర్థం చేసుకున్నారు','అందరూ — అన్ని విద్యార్థులు అర్థం చేసుకుని అనుసరించగలిగారు'],
+      q10:['ఏదీ లేదు — ఏ కార్యకలాపమూ సమయానికి పూర్తి కాలేదు','కొద్ది — కొన్ని కార్యకలాపాలు మాత్రమే సమయానికి పూర్తయ్యాయి','చాలా — చాలా కార్యకలాపాలు సమయానికి పూర్తయ్యాయి','చాలా ఎక్కువ — చాలా ఎక్కువ కార్యకలాపాలు సమయానికి పూర్తయ్యాయి','అన్నీ — అన్ని కార్యకలాపాలు సమయానికి పూర్తయ్యాయి'],
       sq1:['చాలా తక్కువ, చాలా మంది విద్యార్థులు నిమగ్నం కాలేదు','సగటు కంటే తక్కువ, అప్పుడప్పుడు మాత్రమే నిమగ్నమయ్యారు','మధ్యస్థంగా, కొంత భాగంలో నిమగ్నమయ్యారు','బాగా, చాలా భాగంలో నిమగ్నమయ్యారు','మొత్తం సమయం అత్యంత నిమగ్నంగా ఉన్నారు'],
       sq2:['చాలా గందరగోళంగా ఉంది, తరచుగా మళ్ళీ వివరించాల్సి వచ్చింది','కొంత గందరగోళంగా ఉంది, అదనపు మార్గదర్శనం అవసరమైంది','కొంత స్పష్టీకరణతో అర్థమైంది','బాగా అర్థమైంది, కనీస స్పష్టీకరణ అవసరమైంది','స్పష్టంగా మరియు స్వతంత్రంగా అర్థమైంది'],
       sq3:['చాలా భాగం పూర్తి చేయలేకపోయారు','చిన్న భాగం మాత్రమే పూర్తి చేశారు','చాలా భాగం పూర్తి చేశారు, కానీ కొన్ని అంతరాలు ఉన్నాయి','బాగా పూర్తి చేశారు','పూర్తిగా మరియు నమ్మకంగా పూర్తి చేశారు'],
@@ -5898,41 +5898,39 @@ function renderSessionObsForm(){
   html+=soLabel('Q1','Were all the Student Leaders (SLs) present today?',true);
   html+=soYesNo('q1',true);
   html+=soConditional('q1','No',
-    soLabel('Q2','What happened because an SL was absent?',true)+
-    soOptions('q2',['The teacher ran the session instead','Two groups were combined into one','A Support SL took over the session'],true,true)
+    soLabel('Q2','Who taught the group/cluster if their SL was absent?',true)+
+    soOptions('q2',['The teacher taught the group/cluster instead','Two groups were combined into one','A Support SL taught the group/cluster'],true,true)
   );
   html+=soLabel('Q3','How many students attended the session?',true);
   html+=`<input type="number" id="${soQ('q3Attendance')}" min="0" inputmode="numeric" style="margin-top:8px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;width:100%;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--navy)" oninput="soSet('q3Attendance',this.value)" placeholder="0">`;
-  html+=soLabel('Q4','What did the Support SL do today?',true,'Select the option that best describes their role today.',false);
-  html+=soScale('q3',5,['No Support SL was there','Worked as a normal student in a team','Helped with videos, timing, or managing students','Took full charge because main SL was absent','Something else'],false,5);
+  html+=soLabel('Q4','What did the Support SL do today?',true,'',false);
+  html+=soOptions('q3',['No Support SL was there today','The Support SL worked as a normal student in a team','The Support SL helped with videos, timing, or managing students','The Support SL took full charge of one group/cluster because the main SL was absent'],true,true);
   const q5key=isIIF?'Q5_iif':'Q5_school';
-  html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)">Q5. <span data-i18n="questions.${q5key}.text">How much did the Teacher need to step in and help?</span><span class="req">*</span></label><div class="hint" data-i18n="questions.${q5key}.hint">${isIIF?'IIF Observers answer about what you saw.':'Answer about yourself.'}</div>`;
-  html+=soScale('q4',5,['Had to run most of the session','Had to guide the SLs often','Gave a normal, steady amount of support','Helped only a little, when asked','Did not need to help — SLs ran the whole session'],true);
+  html+=soLabel(q5key,'What did the Teacher need to help during the session?',true,'',false);
+  html+=soOptions('q4',['Management of Student behaviour','Video Playing','Doubt Clearing','Explain Activities/concepts','Distributed Books/Materials'],true,true);
   html+='</div>';
 
   // S2: Video Usage
   html+=soSec('2','Video Usage');
   html+=soLabel('Q6','Were videos played in the session today?',true);
   html+=soYesNo('q5',true);
-  html+=soConditional('q5','No',
-    soLabel('Q7','Why was no video played today?',true)+
-    soOptions('q6',['No internet or power','Not enough time','Problem with the pendrive or IFP screen'],true,true)
-  );
+  html+=soLabel('Q7','What problems did you face during the playing of the video?',true);
+  html+=soOptions('q6',['No problems','No internet or power','Not enough time','Problem with the pendrive or the IFP screen (smart screen)'],true,true);
   html+=soConditional('q5','Yes',
     soLabel('Q8','How was the video played?',true)+
     soOptions('q7',['Pendrive & TV','IFP Panel (smart screen)','YouTube','Phone'],false,true)+
     soLabel('Q9','Who played the video?',true)+
     soOptions('q8',['Student Leader','Support SL','Teacher','A student'],true,true)+
-    soLabel('Q10','Were all students able to watch and follow the video together?',true)+
-    soScale('q9',5,['No, a lot of students were left behind','Many students were not able to follow together','Most students followed, but a few fell behind','Almost everyone followed, only one or two fell behind','Yes, every student followed — no one left behind'],false)
+    soLabel('Q10','How many students could watch and understand the video at the same time?',true)+
+    soScale('q9',5,['None — no student could understand and follow','Few — only a few students could understand and follow','Many — many students could understand and follow','Most — most students could understand and follow','All — all students could follow understand and follow'],false)
   );
   html+='</div>';
 
   // S3: Timing & Pacing
   html+=soSec('3','Timing & Pacing');
-  html+=soLabel('Q11','How well was the timing of the session activities planned?',true);
-  html+=soScale('q10',5,['Almost all activities could not complete on time','Most activities finished later than planned','Some activities finished close to on time','Most activities finished close to on time','All activities finished right on time'],true);
-  html+=soLabel('Q12','Was there one activity that needed much more help or attention?',true,'If yes, name it and tell us what happened.',false);
+  html+=soLabel('Q11','How was the timing of the session activities planned?',true);
+  html+=soScale('q10',5,['None — no activity finished on time','Few — only a few activities finished on time','Many — many activities finished on time','Most — most activities finished on time','All — all activities finished on time'],true);
+  html+=soLabel('Q12','Was there any activity that was difficult to complete on time?',true,'If yes, name it and tell us what happened.',false);
   html+=`<textarea id="${soQ('q11')}" rows="2" style="margin-top:8px" oninput="soSet('q11',this.value)"></textarea>`;
   html+=soLabel('Q13','What did you use to keep time?',true,'',false);
   html+=soOptions('q12',['Each SL had their own timer','One shared timer on the table','One stopwatch for the whole class'],true,true);
@@ -6072,12 +6070,13 @@ async function submitSessionObs(){
   if(soAnswers['q1']==='No' && !(soAnswers['q2']&&soAnswers['q2'].length)){ toast('Attendance: Please answer Q2 — what happened because an SL was absent?'); return; }
   if(soAnswers['q1']==='No' && !soOtherFilled('q2')){ toast('Attendance: Please specify what happened (Q2 "Other").'); return; }
   if(soAnswers['q3Attendance']===''||soAnswers['q3Attendance']===undefined||soAnswers['q3Attendance']===null){ toast('Attendance: Please answer Q3 — how many students attended the session?'); return; }
-  if(!soAnswers['q3']){ toast('Attendance: Please answer Q4 — what did the Support SL do today?'); return; }
-  if(soAnswers['q3']==='5'){ toast('Attendance: Please describe what the Support SL did (Q4 "Something else").'); return; }
-  if(!soAnswers['q4']){ toast('Attendance: Please answer Q5 — how much did the teacher step in?'); return; }
+  if(!(soAnswers['q3']&&soAnswers['q3'].length)){ toast('Attendance: Please answer Q4 — what did the Support SL do today?'); return; }
+  if(!soOtherFilled('q3')){ toast('Attendance: Please describe what the Support SL did (Q4 "Something else").'); return; }
+  if(!(soAnswers['q4']&&soAnswers['q4'].length)){ toast('Attendance: Please answer Q5 — what did the teacher help with?'); return; }
+  if(!soOtherFilled('q4')){ toast('Attendance: Please specify what the teacher helped with (Q5 "Others").'); return; }
   if(!soAnswers['q5']){ toast('Video: Please answer Q6 — were videos played today?'); return; }
-  if(soAnswers['q5']==='No' && !(soAnswers['q6']&&soAnswers['q6'].length)){ toast('Video: Please answer Q7 — why was no video played today?'); return; }
-  if(soAnswers['q5']==='No' && !soOtherFilled('q6')){ toast('Video: Please specify why the video wasn\'t played (Q7 "Other").'); return; }
+  if(!(soAnswers['q6']&&soAnswers['q6'].length)){ toast('Video: Please answer Q7 — what problems did you face during the video?'); return; }
+  if(!soOtherFilled('q6')){ toast('Video: Please specify the problem (Q7 "Other").'); return; }
   if(soAnswers['q5']==='Yes'){
     if(!soAnswers['q7']){ toast('Video: Please answer Q8 — how was the video played?'); return; }
     if(!soOtherFilled('q7')){ toast('Video: Please specify how the video was played (Q8 "Other").'); return; }
