@@ -2661,7 +2661,9 @@ function handleGetSessionObsDetail(p) {
   var sessionIdx = header.indexOf('Session');
   var emailIdx   = header.indexOf('Observer Email');
 
-  var teacherRow = null, iifRowFirst = null, iifRowByEmail = null;
+
+  var teacherRow = null, iifRowsByEmail = [], iifRowByEmail = null;
+
   for (var i = 1; i < data.length; i++) {
     var rowSC = String(data[i][scIdx] || '').trim().toUpperCase();
     var rowSt = statusIdx >= 0 ? String(data[i][statusIdx] || '').toLowerCase() : '';
@@ -2670,13 +2672,12 @@ function handleGetSessionObsDetail(p) {
     var rowRole = String(data[i][roleIdx] || '').trim();
     if (rowRole === 'Teacher' && !teacherRow) teacherRow = data[i];
     if (rowRole === 'IIF Observer') {
-      if (!iifRowFirst) iifRowFirst = data[i];
+      iifRowsByEmail.push(data[i]);
       var rowEmail = emailIdx >= 0 ? String(data[i][emailIdx] || '').toLowerCase().trim() : '';
       if (!iifRowByEmail && requesterEmail && rowEmail && rowEmail === requesterEmail) iifRowByEmail = data[i];
     }
-    if (teacherRow && iifRowByEmail) break;
   }
-  var iifRow = iifRowByEmail || iifRowFirst;
+  var iifRow = iifRowByEmail || iifRowsByEmail[0] || null;
   if (!teacherRow && !iifRow) return json({ status:'error', message:'Submission not found' });
   var toObj = function(row) {
     if (!row) return null;
@@ -2684,7 +2685,7 @@ function handleGetSessionObsDetail(p) {
     header.forEach(function(col, idx) { obj[col] = row[idx]; });
     return obj;
   };
-  return json({ status:'ok', teacherSubmission: toObj(teacherRow), iifSubmission: toObj(iifRow) });
+  return json({ status:'ok', teacherSubmission: toObj(teacherRow), iifSubmission: toObj(iifRow), iifSubmissions: iifRowsByEmail.map(toObj) });
 }
 
 function handleGetSessionObs(p) {

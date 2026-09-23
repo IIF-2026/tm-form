@@ -5715,9 +5715,20 @@ async function soViewSession(idx){
     };
     const sessionTitle=`<div style="font-weight:700;font-size:16px;color:var(--navy);margin-bottom:12px">Session ${idx+1} · ${soState.sessionName}</div>`;
     const isIIF=(soState.role==='iif'||soState.role==='admin');
+    let iifCards='';
+    if(isIIF){
+      const allIIF=j.iifSubmissions||(j.iifSubmission?[j.iifSubmission]:[]);
+      if(allIIF.length===0){
+        iifCards=makeCard('IIF Observation',null,iifRows);
+      } else if(allIIF.length===1){
+        iifCards=makeCard('IIF Observation',allIIF[0],iifRows);
+      } else {
+        iifCards=allIIF.map((s,i)=>makeCard('IIF Observation '+(i+1)+(s['Observer Email']?' — '+s['Observer Email']:''),s,iifRows)).join('');
+      }
+    }
     $('soFormContent').innerHTML=backBtn+sessionTitle
       +makeCard('Teacher Submission',j.teacherSubmission,commonRows)
-      +(isIIF?makeCard('IIF Observation',j.iifSubmission,iifRows):'');
+      +iifCards;
   }catch(e){
     $('soFormContent').innerHTML='<div class="card"><p class="hint">Error loading submission.</p></div>';
   }
@@ -6005,31 +6016,31 @@ function renderSessionObsForm(){
   if(isIIF){
     // S6: SL Guide
     html+=soSec('IIF','SL Guide Usage');
-    html+=soLabel('Q18','Were the Student Leaders actively using the SL Guide during the session?',true,'',false);
+    html+=soLabel('Q18','Were the Student Leaders actively using the SL Guide during the session?',false,'',true);
     html+=`<div style="display:flex;gap:8px;margin-top:8px">
       <button type="button" class="so-yn" data-name="q17a" data-val="Yes" data-i18n="options.yn.Yes" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">Yes</button>
       <button type="button" class="so-yn" data-name="q17a" data-val="No" data-i18n="options.yn.No" onclick="soYNClick(this)" style="flex:1;padding:12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer">No</button>
     </div>`;
-    html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)"><span data-i18n="questions.Q18b.text">What worked well with SL Guide, and what could be better?</span><span class="req">*</span></label>`;
+    html+=`<label style="margin-top:12px;font-weight:700;color:var(--navy)"><span data-i18n="questions.Q18b.text">What worked well with SL Guide, and what could be better?</span><span style="font-size:11px;color:var(--ok);font-weight:600;margin-left:6px">(Optional)</span></label>`;
     html+=`<textarea id="${soQ('q17b')}" rows="2" style="margin-top:8px" oninput="soSet('q17b',this.value)"></textarea>`;
     html+='</div>';
 
     // S7: Session Questions
     html+=soSec('IIF','Session Questions');
-    html+=soLabel('SQ1','How engaged were students during the session overall?',true);
-    html+=soScale('sq1',5,['Very low, most students disengaged','Below average, engaged only occasionally','Moderate, engaged for parts of it','Good, engaged for most of it','Highly engaged throughout'],true);
-    html+=soLabel('SQ2','How well did students understand what they were asked to do?',true);
-    html+=soScale('sq2',5,['Very confused, needed things re-explained often','Somewhat confused, needed extra guidance','Understood with some clarification','Understood well, minimal clarification needed','Understood clearly and independently'],true);
-    html+=soLabel('SQ3','How well were students able to complete the session\'s activities overall?',true);
-    html+=soScale('sq3',5,['Could not complete most of it','Completed a small part','Completed most of it, with gaps','Completed it well','Completed fully and confidently'],true);
-    html+=soLabel('SQ4','How much support did students need from SLs or the teacher?',true);
-    html+=soScale('sq4',5,['Could not proceed without constant support','Heavy support, needed help throughout','Moderate support, needed regular help','Minimal support, asked once or twice','No support needed'],true);
+    html+=soLabel('SQ1','How engaged were students during the session overall?',false,'',true);
+    html+=soScale('sq1',5,['Very low, most students disengaged','Below average, engaged only occasionally','Moderate, engaged for parts of it','Good, engaged for most of it','Highly engaged throughout'],false);
+    html+=soLabel('SQ2','How well did students understand what they were asked to do?',false,'',true);
+    html+=soScale('sq2',5,['Very confused, needed things re-explained often','Somewhat confused, needed extra guidance','Understood with some clarification','Understood well, minimal clarification needed','Understood clearly and independently'],false);
+    html+=soLabel('SQ3','How well were students able to complete the session\'s activities overall?',false,'',true);
+    html+=soScale('sq3',5,['Could not complete most of it','Completed a small part','Completed most of it, with gaps','Completed it well','Completed fully and confidently'],false);
+    html+=soLabel('SQ4','How much support did students need from SLs or the teacher?',false,'',true);
+    html+=soScale('sq4',5,['Could not proceed without constant support','Heavy support, needed help throughout','Moderate support, needed regular help','Minimal support, asked once or twice','No support needed'],false);
 
     // Session-specific Q5-Q6 (sessions 2–6 of every level)
     if(sess>=2){
-      html+=soLabel('SQ5','How well did the students understand today\'s focus skill?',true,'',false);
-      html+=soScale('sq5',5,['Did not understand at all','Understood only a little','Understood somewhat','Understood well','Understood very well'],true);
-      html+=soLabel('SQ6','Describe what you saw — how did students practise today\'s focus skill?',true,'e.g. Did the SL use the skill picture/logo, explain it clearly, or connect the activity to the skill?',false);
+      html+=soLabel('SQ5','How well did the students understand today\'s focus skill?',false,'',true);
+      html+=soScale('sq5',5,['Did not understand at all','Understood only a little','Understood somewhat','Understood well','Understood very well'],false);
+      html+=soLabel('SQ6','Describe what you saw — how did students practise today\'s focus skill?',false,'e.g. Did the SL use the skill picture/logo, explain it clearly, or connect the activity to the skill?',true);
       html+=`<textarea id="${soQ('sq6')}" rows="3" style="margin-top:8px" oninput="soSet('sq6',this.value)"></textarea>`;
     }
     html+='</div>';
@@ -6045,9 +6056,9 @@ function renderSessionObsForm(){
       const actName=SO_ACTIVITY_NAMES[lvl+'_'+sess+'_'+act]||'';
       html+=`<div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px">
         <div style="font-weight:700;font-size:14px;color:var(--primary,#0D3B4A);margin-bottom:10px">Activity ${act}${actName?' <span style="font-size:11px;color:var(--muted);font-weight:400">('+actName+')</span>':''}</div>`;
-      html+=soLabel('AQ1','Overall, how did this activity go?',true,'',false);
+      html+=soLabel('AQ1','Overall, how did this activity go?',false,'',true);
       html+=soScale('act'+act+'_q1',5,['Students struggled a lot — could not really do it','Completed but needed a lot of help','Adequate, went okay','Good, went well with minor issues','Excellent, went very well'],false);
-      html+=soLabel('AQ2','Any suggestions or feedback on this activity?',true,'Write about time, student engagement, clarity, skills, or teamwork.',false);
+      html+=soLabel('AQ2','Any suggestions or feedback on this activity?',false,'Write about time, student engagement, clarity, skills, or teamwork.',true);
       html+=`<textarea id="${soQ('act'+act+'_q2')}" rows="2" style="margin-top:8px" oninput="soSet('act${act}_q2',this.value)"></textarea>`;
       // Extra questions
       actExtras.forEach(eq=>{
@@ -6066,14 +6077,14 @@ function renderSessionObsForm(){
 
     // S9: Student Leaders
     html+=soSec('IIF','Student Leaders');
-    html+=soLabel('Q19','Which language did the Student Leaders mainly use to explain things?',true,'',false);
+    html+=soLabel('Q19','Which language did the Student Leaders mainly use to explain things?',false,'',true);
     html+=soOptions('q18',['English','Telugu','Both'],false,true);
-    html+=soLabel('Q20','How clearly were the Student Leaders able to explain the activities?',true,'',false);
+    html+=soLabel('Q20','How clearly were the Student Leaders able to explain the activities?',false,'',true);
     html+=soScale('q19',5,['Could not explain clearly at all, students were lost','Explanation was unclear, students often confused','Explained okay, students sometimes needed clarity','Explained clearly, most students understood','Explained very clearly, almost all students understood'],false);
-    html+=soLabel('Q21','Did the Student Leaders use any materials from the MMS kit today?',true,'',false);
+    html+=soLabel('Q21','Did the Student Leaders use any materials from the MMS kit today?',false,'',true);
     html+=soOptions('q20',['Yes','No','Not Applicable'],false,false);
     html+=soConditional('q20','No',
-      `<label style="margin-top:12px;font-weight:700;color:var(--navy)"><span data-i18n="questions.Q21b.text">Why not? Any Feedback:</span><span class="req">*</span></label>`+
+      `<label style="margin-top:12px;font-weight:700;color:var(--navy)"><span data-i18n="questions.Q21b.text">Why not? Any Feedback:</span><span style="font-size:11px;color:var(--ok);font-weight:600;margin-left:6px">(Optional)</span></label>`+
       `<textarea id="${soQ('q20_feedback')}" rows="2" style="margin-top:8px" oninput="soSet('q20_feedback',this.value)"></textarea>`
     );
     html+='</div>';
