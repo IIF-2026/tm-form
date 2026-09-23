@@ -2530,25 +2530,28 @@ function handleSessionObsSubmit(payload) {
   var obsRole = String((payload.header || {}).role || '').trim();
 
   // IIF Observers may each submit their own observation for the same session;
-  // only block a second submission from the SAME observer for the SAME session.
-  if (obsRole === 'IIF Observer' && observerEmail) {
-    var dupSchoolCode = ((payload.header || {}).schoolCode || '').trim().toUpperCase();
-    var dupData = tab.getDataRange().getValues();
-    if (dupData.length >= 2) {
-      var dupHeader = dupData[0];
-      var dScIdx = dupHeader.indexOf('School Code');
-      var dRoleIdx = dupHeader.indexOf('Role');
-      var dSessIdx = dupHeader.indexOf('Session');
-      var dStatusIdx = dupHeader.indexOf('Status');
-      var dEmailIdx = dupHeader.indexOf('Observer Email');
-      for (var di = 1; di < dupData.length; di++) {
-        if (dScIdx >= 0 && String(dupData[di][dScIdx] || '').trim().toUpperCase() !== dupSchoolCode) continue;
-        if (dSessIdx >= 0 && String(dupData[di][dSessIdx] || '').trim() !== session) continue;
-        if (dRoleIdx >= 0 && String(dupData[di][dRoleIdx] || '').trim() !== 'IIF Observer') continue;
-        if (dStatusIdx >= 0 && String(dupData[di][dStatusIdx] || '').toLowerCase() === 'superseded') continue;
-        var dExistingEmail = dEmailIdx >= 0 ? String(dupData[di][dEmailIdx] || '').toLowerCase().trim() : '';
-        if (dExistingEmail && dExistingEmail === observerEmail) {
-          return json({ status: 'duplicate', message: 'You have already submitted an observation for this session.' });
+  // only block a second submission from the SAME observer (matched by Your Name) for the SAME session.
+  if (obsRole === 'IIF Observer') {
+    var submitterName = ((payload.header || {}).yourName || '').toLowerCase().trim();
+    if (submitterName) {
+      var dupSchoolCode = ((payload.header || {}).schoolCode || '').trim().toUpperCase();
+      var dupData = tab.getDataRange().getValues();
+      if (dupData.length >= 2) {
+        var dupHeader = dupData[0];
+        var dScIdx = dupHeader.indexOf('School Code');
+        var dRoleIdx = dupHeader.indexOf('Role');
+        var dSessIdx = dupHeader.indexOf('Session');
+        var dStatusIdx = dupHeader.indexOf('Status');
+        var dNameIdx = dupHeader.indexOf('Your Name');
+        for (var di = 1; di < dupData.length; di++) {
+          if (dScIdx >= 0 && String(dupData[di][dScIdx] || '').trim().toUpperCase() !== dupSchoolCode) continue;
+          if (dSessIdx >= 0 && String(dupData[di][dSessIdx] || '').trim() !== session) continue;
+          if (dRoleIdx >= 0 && String(dupData[di][dRoleIdx] || '').trim() !== 'IIF Observer') continue;
+          if (dStatusIdx >= 0 && String(dupData[di][dStatusIdx] || '').toLowerCase() === 'superseded') continue;
+          var dExistingName = dNameIdx >= 0 ? String(dupData[di][dNameIdx] || '').toLowerCase().trim() : '';
+          if (dExistingName && dExistingName === submitterName) {
+            return json({ status: 'duplicate', message: 'You have already submitted an observation for this session.' });
+          }
         }
       }
     }
@@ -2722,7 +2725,7 @@ function handleGetSessionObs(p) {
         var roleIdx    = header.indexOf('Role');
         var statusIdx  = header.indexOf('Status');
         var sessionIdx = header.indexOf('Session');
-        var emailIdx   = header.indexOf('Observer Email');
+        var nameIdx    = header.indexOf('Your Name');
         for (var i = 1; i < data.length; i++) {
           var rowSC = String(data[i][scIdx] || '').trim().toUpperCase();
           if (rowSC !== schoolCode) continue;
@@ -2734,10 +2737,10 @@ function handleGetSessionObs(p) {
           if (rowRole === 'Teacher') teacherSessions[rowSess] = true;
           if (rowRole === 'IIF Observer') {
             iifSessions[rowSess] = true;
-            var rowEmail = emailIdx >= 0 ? String(data[i][emailIdx] || '').toLowerCase().trim() : '';
-            if (rowEmail) {
-              if (!iifByObserver[rowEmail]) iifByObserver[rowEmail] = {};
-              iifByObserver[rowEmail][rowSess] = true;
+            var rowName = nameIdx >= 0 ? String(data[i][nameIdx] || '').toLowerCase().trim() : '';
+            if (rowName) {
+              if (!iifByObserver[rowName]) iifByObserver[rowName] = {};
+              iifByObserver[rowName][rowSess] = true;
             }
           }
         }
@@ -2747,8 +2750,8 @@ function handleGetSessionObs(p) {
     submitted    = Object.keys(teacherSessions).map(Number).sort(function(a,b){return a-b;});
     iifSubmitted = Object.keys(iifSessions).map(Number).sort(function(a,b){return a-b;});
     var iifByObserverArrays = {};
-    Object.keys(iifByObserver).forEach(function(email) {
-      iifByObserverArrays[email] = Object.keys(iifByObserver[email]).map(Number).sort(function(a,b){return a-b;});
+    Object.keys(iifByObserver).forEach(function(name) {
+      iifByObserverArrays[name] = Object.keys(iifByObserver[name]).map(Number).sort(function(a,b){return a-b;});
     });
     iifByObserver = iifByObserverArrays;
 
@@ -2756,6 +2759,7 @@ function handleGetSessionObs(p) {
     setCached(cacheKey, result, 300);
   }
 
-  var iifSubmittedByMe = (requesterEmail && iifByObserver[requesterEmail]) || [];
+  var requesterName = ((p.yourName || '') + '').toLowerCase().trim();
+  var iifSubmittedByMe = (requesterName && iifByObserver[requesterName]) || [];
   return json({ status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted, iifSubmittedByMe: iifSubmittedByMe });
 }

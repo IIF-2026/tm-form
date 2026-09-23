@@ -1645,11 +1645,12 @@ async function fetchForm4Subs(url,code,token){
   return j;
 }
 
-async function fetchSessionObs(url,code,level,token){
-  const key='tm_so_'+code+'_L'+level;
+async function fetchSessionObs(url,code,level,token,yourName){
+  const namePart=yourName?'_'+yourName.toLowerCase().trim():'';
+  const key='tm_so_'+code+'_L'+level+namePart;
   const cached=scGet(key);
   if(cached) return cached;
-  const r=await fetch(url+'?action=getSessionObs&schoolCode='+encodeURIComponent(code)+'&level='+encodeURIComponent(level)+'&token='+encodeURIComponent(token));
+  const r=await fetch(url+'?action=getSessionObs&schoolCode='+encodeURIComponent(code)+'&level='+encodeURIComponent(level)+'&yourName='+encodeURIComponent(yourName||'')+'&token='+encodeURIComponent(token));
   const j=await r.json();
   if(j.status==='ok') scSet(key,j);
   return j;
@@ -5592,7 +5593,7 @@ async function soSelectUnit(n){
   $('soSessionCards').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px">Loading…</p>';
   try{
     const s=getSession(); const url=getCfg().url;
-    const j=await fetchSessionObs(url,soState.schoolCode,soState.level,s.token);
+    const j=await fetchSessionObs(url,soState.schoolCode,soState.level,s.token,soState.yourName);
     if(j.status==='ok'){
       soState.submittedSessions=j.submitted||[];
       soState.iifSubmittedSessions=j.iifSubmittedByMe||[];
