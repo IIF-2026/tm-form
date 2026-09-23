@@ -5597,6 +5597,7 @@ async function soSelectUnit(n){
     if(j.status==='ok'){
       soState.submittedSessions=j.submitted||[];
       soState.iifSubmittedSessions=j.iifSubmittedByMe||[];
+      soState.iifSubmittedCounts=j.iifSubmittedCounts||{};
     }
   }catch(e){ soState.submittedSessions=[]; }
   renderSOSessions();
@@ -5611,13 +5612,15 @@ function renderSOSessions(){
   const isIIF=(soState.role==='iif'||soState.role==='admin');
   const greenBadge=lbl=>`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#15803D;vertical-align:middle;margin-right:4px">&#10003; ${lbl}</span>`;
   const grayBadge=lbl=>`<span style="font-size:11px;font-weight:400;color:var(--muted);vertical-align:middle;margin-right:4px">${lbl}: not filled</span>`;
+  const filledByOthersBadge=(lbl,n)=>`<span style="font-size:11px;font-weight:400;color:var(--muted);vertical-align:middle;margin-right:4px">${lbl}: filled by ${n}</span>`;
   $('soSessionCards').innerHTML=sessions.map((name,i)=>{
     const sessNum=i+1;
     const teacherDone=(soState.submittedSessions||[]).indexOf(sessNum)>-1;
     const iifDone=(soState.iifSubmittedSessions||[]).indexOf(sessNum)>-1;
+    const iifOtherCount=Number((soState.iifSubmittedCounts||{})[sessNum]||0);
     const actionDone=isIIF?iifDone:teacherDone;
     const teacherBadge=teacherDone?greenBadge('Teacher'):grayBadge('Teacher');
-    const iifBadge=iifDone?greenBadge('IIF'):grayBadge('IIF');
+    const iifBadge=iifDone?greenBadge('IIF'):iifOtherCount>0?filledByOthersBadge('IIF',iifOtherCount):grayBadge('IIF');
     const statusRow=isIIF
       ?`${teacherBadge}${iifBadge}`
       :teacherDone

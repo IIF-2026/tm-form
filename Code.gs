@@ -2700,12 +2700,13 @@ function handleGetSessionObs(p) {
 
   var cacheKey = 'so_' + schoolCode + '_L' + level;
   var cached = getCached(cacheKey);
-  var submitted, iifSubmitted, iifByObserver;
+  var submitted, iifSubmitted, iifSubmittedCounts, iifByObserver;
 
   if (cached) {
-    submitted     = cached.submitted || [];
-    iifSubmitted  = cached.iifSubmitted || [];
-    iifByObserver = cached.iifByObserver || {};
+    submitted          = cached.submitted || [];
+    iifSubmitted       = cached.iifSubmitted || [];
+    iifSubmittedCounts = cached.iifSubmittedCounts || {};
+    iifByObserver      = cached.iifByObserver || {};
   } else {
     var ss = getSheet();
     var partnerName = getPartnerForSchool(ss, schoolCode);
@@ -2736,7 +2737,7 @@ function handleGetSessionObs(p) {
           var rowRole = String(data[i][roleIdx] || '').trim();
           if (rowRole === 'Teacher') teacherSessions[rowSess] = true;
           if (rowRole === 'IIF Observer') {
-            iifSessions[rowSess] = true;
+            iifSessions[rowSess] = (iifSessions[rowSess] || 0) + 1;
             var rowName = nameIdx >= 0 ? String(data[i][nameIdx] || '').toLowerCase().trim() : '';
             if (rowName) {
               if (!iifByObserver[rowName]) iifByObserver[rowName] = {};
@@ -2747,19 +2748,20 @@ function handleGetSessionObs(p) {
       }
     }
 
-    submitted    = Object.keys(teacherSessions).map(Number).sort(function(a,b){return a-b;});
-    iifSubmitted = Object.keys(iifSessions).map(Number).sort(function(a,b){return a-b;});
+    submitted          = Object.keys(teacherSessions).map(Number).sort(function(a,b){return a-b;});
+    iifSubmitted       = Object.keys(iifSessions).map(Number).sort(function(a,b){return a-b;});
+    iifSubmittedCounts = iifSessions;
     var iifByObserverArrays = {};
     Object.keys(iifByObserver).forEach(function(name) {
       iifByObserverArrays[name] = Object.keys(iifByObserver[name]).map(Number).sort(function(a,b){return a-b;});
     });
     iifByObserver = iifByObserverArrays;
 
-    var result = { status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted, iifByObserver: iifByObserver };
+    var result = { status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted, iifSubmittedCounts: iifSubmittedCounts, iifByObserver: iifByObserver };
     setCached(cacheKey, result, 300);
   }
 
   var requesterName = ((p.yourName || '') + '').toLowerCase().trim();
   var iifSubmittedByMe = (requesterName && iifByObserver[requesterName]) || [];
-  return json({ status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted, iifSubmittedByMe: iifSubmittedByMe });
+  return json({ status: 'ok', submitted: submitted, iifSubmitted: iifSubmitted, iifSubmittedCounts: iifSubmittedCounts, iifSubmittedByMe: iifSubmittedByMe });
 }
