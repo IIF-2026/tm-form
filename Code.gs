@@ -2567,16 +2567,22 @@ function handleSessionObsSubmit(payload) {
   var schoolCode = ((payload.header || {}).schoolCode || 'SCH').replace(/[^a-zA-Z0-9]/g, '_');
   var grade = String((payload.header || {}).grade || '').replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
   var sid = payload.submissionId || '';
+  var rawSchoolName = String((payload.header || {}).school || '').replace(/[\/\\]/g, '-').trim();
+  var rawCode = String((payload.header || {}).schoolCode || '').trim();
+  var schoolFolderName = rawSchoolName && rawCode ? rawSchoolName + ' (' + rawCode + ')'
+                       : (rawSchoolName || rawCode || 'Unknown School');
 
+  // Partner/TM_SessionPhotos/<School (Code)>/Level<N>/Grade<G>/Session<S>/{Session,Workbook,Activity}
   var sessionPhotosFolder, workbookPhotosFolder, activityPhotosFolder;
   try {
     if (pEntry.folderId) {
-      var gradeBaseFolder = getOrCreateNestedSubFolder(pEntry.folderId, [
-        'TM_SessionPhotos', 'Level' + level, 'Grade' + grade
+      var sessionBaseFolder = getOrCreateNestedSubFolder(pEntry.folderId, [
+        'TM_SessionPhotos', schoolFolderName, 'Level' + level, 'Grade' + grade,
+        'Session' + session.replace(/[^a-zA-Z0-9]/g, '_')
       ]);
-      sessionPhotosFolder  = getOrCreatePartnerSubFolder(gradeBaseFolder.getId(), 'Session');
-      workbookPhotosFolder = getOrCreatePartnerSubFolder(gradeBaseFolder.getId(), 'Workbook');
-      activityPhotosFolder = getOrCreatePartnerSubFolder(gradeBaseFolder.getId(), 'Activity');
+      sessionPhotosFolder  = getOrCreatePartnerSubFolder(sessionBaseFolder.getId(), 'Session');
+      workbookPhotosFolder = getOrCreatePartnerSubFolder(sessionBaseFolder.getId(), 'Workbook');
+      activityPhotosFolder = getOrCreatePartnerSubFolder(sessionBaseFolder.getId(), 'Activity');
     }
   } catch(e) {}
   var fallbackFolder = getOrCreateDriveFolder('TM_SessionPhotos');
