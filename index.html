@@ -3780,6 +3780,67 @@ function renderTeluguCell(text, colWidthMm, lineHmm, color){
   return { dataUri:canvas.toDataURL('image/png'), heightMm:(lines.length*lineHpx+botPad)/pxPerMm, lineCount:lines.length };
 }
 
+// Draws an image inside the box (x,y,w,h) keeping its aspect ratio, centred
+function buddyPDFAddFittedImage(doc, dataUri, x, y, w, h){
+  const props=doc.getImageProperties(dataUri);
+  const r=Math.min(w/props.width, h/props.height);
+  const dw=props.width*r, dh=props.height*r;
+  doc.addImage(dataUri,props.fileType,x+(w-dw)/2,y+(h-dh)/2,dw,dh,'','FAST');
+}
+
+// Header band + Team Details (left) + idea photo (right, height matched to details) + "Feedback Questions" heading.
+// Returns the y where the questions table should start.
+function buddyPDFDrawTop(doc, details, photoDataUri, noPhotoText){
+  const ml=12, pageW=210;
+  const colW=88, imgX=106, imgW=92, topY=32;
+
+  // Header band
+  doc.setFillColor(13,59,74); doc.rect(0,0,pageW,28,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+  doc.text('Think And Make 2026-27 — Evaluation Report',ml,12);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(0,191,255);
+  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,21);
+
+  // Team Details (left column)
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,59,74);
+  doc.text('Team Details',ml,topY+1);
+  doc.setDrawColor(0,191,255); doc.line(ml,topY+4,ml+colW,topY+4);
+  let dy=topY+9;
+  doc.setFontSize(8);
+  details.forEach(([lbl,val])=>{
+    doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,dy);
+    doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51);
+    const vLines=doc.splitTextToSize(String(val),colW-28);
+    doc.text(vLines,ml+28,dy);
+    dy+=Math.max(vLines.length*4.8,6);
+  });
+
+  // Top block height follows the details text (min 45mm, max 78mm)
+  const topH=Math.min(78,Math.max(45,dy-topY));
+
+  // Idea Image (right column)
+  doc.setDrawColor(200,210,215); doc.rect(imgX,topY,imgW,topH);
+  let drawn=false;
+  if(photoDataUri){
+    try{ buddyPDFAddFittedImage(doc,photoDataUri,imgX,topY,imgW,topH); drawn=true; }catch(e){}
+  }
+  if(!drawn){
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(170,170,170);
+    doc.text(noPhotoText||'Idea image',imgX+imgW/2,topY+topH/2,{align:'center'});
+  }
+
+  // Divider
+  const divY=topY+topH+4;
+  doc.setDrawColor(0,191,255); doc.line(ml,divY,pageW-ml,divY);
+
+  // "Feedback Questions" heading
+  const headY=divY+7;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
+  doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
+
+  return headY+5;
+}
+
 async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, engIntro, telIntro){
   const ml=12, colW=88, gap=10, rowPad=3, lineH=5.2, fs=8.5;
   const telX=ml+colW+gap;
@@ -3884,20 +3945,8 @@ async function downloadBuddyPDF(){
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
 
-  const ml=12, pageW=210, pageH=297;
-  const colW=88, imgX=106, imgW=92, topH=78, topY=32;
+  const ml=12, pageH=297;
 
-  // Header band
-  doc.setFillColor(13,59,74); doc.rect(0,0,pageW,28,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
-  doc.text('Think And Make 2026-27 — Evaluation Report',ml,12);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(0,191,255);
-  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,21);
-
-  // Team Details (left column)
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,59,74);
-  doc.text('Team Details',ml,topY+1);
-  doc.setDrawColor(0,191,255); doc.line(ml,topY+4,ml+colW,topY+4);
   const details=[
     ['School',buddyState.school||'—'],
     ['Partner',buddyState.partner||'—'],
@@ -3908,43 +3957,16 @@ async function downloadBuddyPDF(){
     ['Students',(buddyState.teamStudents||[]).join(', ')||'—'],
     ['Evaluated On',new Date().toLocaleDateString('en-IN')]
   ];
-  let dy=topY+9;
-  doc.setFontSize(8);
-  details.forEach(([lbl,val])=>{
-    if(dy>topY+topH-4) return;
-    doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,dy);
-    doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51);
-    const vLines=doc.splitTextToSize(String(val),colW-28);
-    doc.text(vLines,ml+28,dy);
-    dy+=Math.max(vLines.length*4.8,6);
-  });
-
-  // Idea Image (right column)
-  doc.setDrawColor(200,210,215); doc.rect(imgX,topY,imgW,topH);
   const imgEl=$('buddyPreview');
-  if(imgEl&&imgEl.src&&imgEl.src.startsWith('data:')){
-    try{ doc.addImage(imgEl.src,'JPEG',imgX,topY,imgW,topH,'','FAST'); }catch(e){}
-  } else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(170,170,170);
-    doc.text('Idea image',imgX+imgW/2,topY+topH/2,{align:'center'});
-  }
-
-  // Divider
-  const divY=topY+topH+4;
-  doc.setDrawColor(0,191,255); doc.line(ml,divY,pageW-ml,divY);
-
-  // "Feedback Questions" heading
-  const headY=divY+7;
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
-  doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
+  const photoUri=(imgEl&&imgEl.src&&imgEl.src.startsWith('data:'))?imgEl.src:null;
+  const tableY=buddyPDFDrawTop(doc,details,photoUri,'Idea image');
 
   // Questions table
-  const tableEndY=await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5,engIntro,telIntro);
+  await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
 
-  // Footer — placed dynamically so it never overlaps table content
-  const footerY=Math.max(tableEndY+3,pageH-7);
+  // Footer — fixed at the bottom of the page
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
-  doc.text('Page 1 of 1   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,footerY);
+  doc.text('Page 1 of 1   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,pageH-7);
 
   const fname='InquiBuddy_'+escHtml(buddyState.schoolCode)+'_Team'+escHtml(String(buddyState.teamId))+'_'+new Date().toISOString().slice(0,10)+'.pdf';
   doc.save(fname);
@@ -4786,20 +4808,8 @@ async function sbDownloadTeamPDF(teamCode){
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
 
-  const ml=12, pageW=210, pageH=297;
-  const colW=88, imgX=106, imgW=92, topH=78, topY=32;
+  const ml=12, pageH=297;
 
-  // Header band
-  doc.setFillColor(13,59,74); doc.rect(0,0,pageW,28,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
-  doc.text('Think And Make 2026-27 — Evaluation Report',ml,12);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(0,191,255);
-  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,21);
-
-  // Team Details (left column)
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,59,74);
-  doc.text('Team Details',ml,topY+1);
-  doc.setDrawColor(0,191,255); doc.line(ml,topY+4,ml+colW,topY+4);
   const details=[
     ['School',schoolBuddyState.school+' ('+schoolBuddyState.schoolCode+')'],
     ['Partner',schoolBuddyState.partner||'—'],
@@ -4809,19 +4819,8 @@ async function sbDownloadTeamPDF(teamCode){
     ['Cluster ID',team.clusterId||'—'],
     ['Students',(team.students||[]).join(', ')||'—']
   ];
-  let dy=topY+9;
-  doc.setFontSize(8);
-  details.forEach(([lbl,val])=>{
-    if(dy>topY+topH-4) return;
-    doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,dy);
-    doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51);
-    const vLines=doc.splitTextToSize(String(val),colW-28);
-    doc.text(vLines,ml+28,dy);
-    dy+=Math.max(vLines.length*4.8,6);
-  });
 
-  // Idea Image (right column) — build JPEG from local base64 or Drive
-  doc.setDrawColor(200,210,215); doc.rect(imgX,topY,imgW,topH);
+  // Idea Image — build JPEG from local base64 or Drive
   const localArt=schoolBuddyState.localArtifacts[teamCode];
   const photoB64=localArt?.photoBase64||team.photoBase64;
   const photoMime=localArt?.photoMime||team.photoMime||'image/jpeg';
@@ -4855,29 +4854,14 @@ async function sbDownloadTeamPDF(teamCode){
       }
     }catch(e){}
   }
-  if(jpegUrl){
-    try{ doc.addImage(jpegUrl,'JPEG',imgX,topY,imgW,topH,'','FAST'); }catch(e){}
-  } else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(170,170,170);
-    doc.text('Idea image',imgX+imgW/2,topY+topH/2,{align:'center'});
-  }
-
-  // Divider
-  const divY=topY+topH+4;
-  doc.setDrawColor(0,191,255); doc.line(ml,divY,pageW-ml,divY);
-
-  // "Feedback Questions" heading
-  const headY=divY+7;
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
-  doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
+  const tableY=buddyPDFDrawTop(doc,details,jpegUrl,'Idea image');
 
   // Questions table
-  const tableEndY=await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5,engIntro,telIntro);
+  await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
 
-  // Footer — placed dynamically so it never overlaps table content
-  const footerY=Math.max(tableEndY+3,pageH-7);
+  // Footer — fixed at the bottom of the page
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
-  doc.text('Page 1 of 1   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,footerY);
+  doc.text('Page 1 of 1   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,pageH-7);
 
   const date=new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('InquiBuddy_'+schoolBuddyState.schoolCode+'_Team'+teamCode+'_'+date+'.pdf');
@@ -4896,9 +4880,7 @@ async function sbDownloadAllPDF(){
   const teluguLoaded=await loadTeluguFont();
 
   const ml=12, pageW=210, pageH=297;
-  const colW=88, imgX=106, imgW=92, topH=78, topY=32;
   let firstTeam=true;
-  const tableEndYs=[];
 
   for(const team of teams){
     if(!firstTeam) doc.addPage();
@@ -4909,17 +4891,6 @@ async function sbDownloadAllPDF(){
     const engIntro=extractBuddyIntro(team.feedbackText);
     const telIntro=extractTeluguIntro(team.feedbackText);
 
-    // Header band
-    doc.setFillColor(13,59,74); doc.rect(0,0,pageW,28,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
-    doc.text('Think And Make 2026-27 — Evaluation Report',ml,12);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(0,191,255);
-    doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,21);
-
-    // Team Details (left column)
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,59,74);
-    doc.text('Team Details',ml,topY+1);
-    doc.setDrawColor(0,191,255); doc.line(ml,topY+4,ml+colW,topY+4);
     const details=[
       ['School',schoolBuddyState.school+' ('+schoolBuddyState.schoolCode+')'],
       ['Partner',schoolBuddyState.partner||'—'],
@@ -4929,18 +4900,8 @@ async function sbDownloadAllPDF(){
       ['Cluster ID',team.clusterId||'—'],
       ['Students',(team.students||[]).join(', ')||'—']
     ];
-    let dy=topY+9; doc.setFontSize(8);
-    details.forEach(([lbl,val])=>{
-      if(dy>topY+topH-4) return;
-      doc.setFont('helvetica','bold'); doc.setTextColor(13,59,74); doc.text(lbl+':',ml,dy);
-      doc.setFont('helvetica','normal'); doc.setTextColor(51,51,51);
-      const vLines=doc.splitTextToSize(String(val),colW-28);
-      doc.text(vLines,ml+28,dy);
-      dy+=Math.max(vLines.length*4.8,6);
-    });
 
-    // Idea Image (right column)
-    doc.setDrawColor(200,210,215); doc.rect(imgX,topY,imgW,topH);
+    // Idea Image
     const localArt=schoolBuddyState.localArtifacts[team.teamCode];
     const photoB64=localArt?.photoBase64||team.photoBase64;
     const photoMime=localArt?.photoMime||team.photoMime||'image/jpeg';
@@ -4974,30 +4935,17 @@ async function sbDownloadAllPDF(){
         }
       }catch(e){}
     }
-    if(jpegUrl){
-      try{ doc.addImage(jpegUrl,'JPEG',imgX,topY,imgW,topH,'','FAST'); }catch(e){}
-    } else {
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(170,170,170);
-      doc.text('Idea image not available',imgX+imgW/2,topY+topH/2,{align:'center'});
-    }
-
-    // Divider + heading
-    const divY=topY+topH+4;
-    doc.setDrawColor(0,191,255); doc.line(ml,divY,pageW-ml,divY);
-    const headY=divY+7;
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,59,74);
-    doc.text('Feedback Questions',pageW/2,headY,{align:'center'});
+    const tableY=buddyPDFDrawTop(doc,details,jpegUrl,'Idea image not available');
 
     // Questions table
-    const tblEnd=await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,headY+5,engIntro,telIntro);
-    tableEndYs.push(tblEnd);
+    await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
   }
 
-  // Page numbers + footers placed dynamically below each team's table
+  // Page numbers + footers fixed at the bottom of each page
   const totalPages=doc.getNumberOfPages();
   for(let p=1;p<=totalPages;p++){
     doc.setPage(p);
-    const footerY=Math.max((tableEndYs[p-1]||0)+3,pageH-7);
+    const footerY=pageH-7;
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
     doc.text('Page '+p+' of '+totalPages,pageW-ml,footerY,{align:'right'});
     doc.text('Inqui Buddy  |  Inqui-Lab Foundation  |  Think & Make 2026-27',ml,footerY);
