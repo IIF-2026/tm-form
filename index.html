@@ -3792,14 +3792,14 @@ function buddyPDFAddFittedImage(doc, dataUri, x, y, w, h){
 // Returns the y where the questions table should start.
 function buddyPDFDrawTop(doc, details, photoDataUri, noPhotoText){
   const ml=12, pageW=210;
-  const colW=88, imgX=106, imgW=92, topY=32;
+  const colW=88, imgX=106, imgW=92, topY=21;
 
-  // Header band
-  doc.setFillColor(13,59,74); doc.rect(0,0,pageW,28,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
-  doc.text('Think And Make 2026-27 — Evaluation Report',ml,12);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(0,191,255);
-  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,21);
+  // Header band (page number is added top-right by buddyPDFPageNumbers)
+  doc.setFillColor(13,59,74); doc.rect(0,0,pageW,16,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.text('Think And Make 2026-27 — Evaluation Report',ml,7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(0,191,255);
+  doc.text('Inqui-Lab Foundation  |  Inqui Buddy  |  '+new Date().toLocaleDateString('en-IN'),ml,12.5);
 
   // Team Details (left column)
   doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,59,74);
@@ -3841,8 +3841,19 @@ function buddyPDFDrawTop(doc, details, photoDataUri, noPhotoText){
   return headY+5;
 }
 
+// Writes "Page p of N" in the top-right of the header band on every page
+function buddyPDFPageNumbers(doc){
+  const pageW=210, total=doc.getNumberOfPages();
+  for(let p=1;p<=total;p++){
+    doc.setPage(p);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+    doc.text('Page '+p+' of '+total,pageW-12,7,{align:'right'});
+  }
+}
+
 async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, engIntro, telIntro){
-  const ml=12, colW=88, gap=10, rowPad=3, lineH=5.2, fs=8.5;
+  const ml=12, colW=88, gap=10, rowPad=2, lineH=5.2, fs=8.5;
+  const engLH=fs*1.15*25.4/72; // jsPDF default line spacing for multi-line text (mm)
   const telX=ml+colW+gap;
   // Table header
   doc.setFillColor(13,59,74);
@@ -3858,14 +3869,13 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     if(teluguAvailable && telIntro){
       try{ telIntroImg=renderTeluguCell(telIntro,colW-7,lineH); }catch(e){}
     }
-    const telIntroLineCount=telIntroImg?telIntroImg.lineCount:introLines.length;
-    const introRowH=Math.max(introLines.length,telIntroLineCount)*lineH+rowPad*2;
+    const introRowH=Math.max(introLines.length*engLH,telIntroImg?telIntroImg.heightMm:0)+rowPad*2;
     // Light warm background for intro
     doc.setFillColor(240,247,240);
     doc.rect(ml,y,colW,introRowH,'F'); doc.rect(telX,y,colW,introRowH,'F');
     doc.setDrawColor(200,210,215); doc.rect(ml,y,colW,introRowH); doc.rect(telX,y,colW,introRowH);
     doc.setFont('helvetica','normal'); doc.setFontSize(fs); doc.setTextColor(40,40,40);
-    doc.text(introLines,ml+3,y+rowPad+lineH*0.8);
+    doc.text(introLines,ml+3,y+rowPad+engLH*0.8);
     if(telIntroImg){
       try{ doc.addImage(telIntroImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telIntroImg.heightMm,introRowH-rowPad)); }catch(e){}
     }
@@ -3895,15 +3905,14 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     if(teluguAvailable && telQs[i]){
       try{ telImg=renderTeluguCell(telText,colW-7,lineH); }catch(e){}
     }
-    const telLineCount=telImg?telImg.lineCount:engLines.length;
-    const rowH=Math.max(engLines.length,telLineCount)*lineH+rowPad*2;
+    const rowH=Math.max(engLines.length*engLH,telImg?telImg.heightMm:0)+rowPad*2;
     // Row background (alternating)
     if(i%2===0){ doc.setFillColor(245,248,250); doc.rect(ml,y,colW,rowH,'F'); doc.rect(telX,y,colW,rowH,'F'); }
     // Border lines
     doc.setDrawColor(200,210,215); doc.rect(ml,y,colW,rowH); doc.rect(telX,y,colW,rowH);
     // English text
     doc.setFont('helvetica','normal'); doc.setFontSize(fs); doc.setTextColor(40,40,40);
-    doc.text(engLines,ml+3,y+rowPad+lineH*0.8);
+    doc.text(engLines,ml+3,y+rowPad+engLH*0.8);
     // Telugu image
     if(telImg){
       try{ doc.addImage(telImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telImg.heightMm,rowH-rowPad)); }catch(e){}
@@ -3919,13 +3928,12 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
   if(teluguAvailable){
     try{ telInstrImg=renderTeluguCell(telInstr,colW-7,lineH,'#5d4000'); }catch(e){}
   }
-  const telInstrLineCount=telInstrImg?telInstrImg.lineCount:instrLines.length;
-  const instrRowH=Math.max(instrLines.length,telInstrLineCount)*lineH+rowPad*2+2;
+  const instrRowH=Math.max(instrLines.length*engLH,telInstrImg?telInstrImg.heightMm:0)+rowPad*2;
   doc.setFillColor(255,248,225);
   doc.rect(ml,y,colW,instrRowH,'F'); doc.rect(telX,y,colW,instrRowH,'F');
   doc.setDrawColor(249,168,37); doc.rect(ml,y,colW,instrRowH); doc.rect(telX,y,colW,instrRowH);
   doc.setFont('helvetica','italic'); doc.setFontSize(fs); doc.setTextColor(93,64,0);
-  doc.text(instrLines,ml+3,y+rowPad+lineH*0.8);
+  doc.text(instrLines,ml+3,y+rowPad+engLH*0.8);
   if(telInstrImg){
     try{ doc.addImage(telInstrImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telInstrImg.heightMm,instrRowH-rowPad)); }catch(e){}
   }
@@ -3945,8 +3953,6 @@ async function downloadBuddyPDF(){
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
 
-  const ml=12, pageH=297;
-
   const details=[
     ['School',buddyState.school||'—'],
     ['Partner',buddyState.partner||'—'],
@@ -3964,9 +3970,7 @@ async function downloadBuddyPDF(){
   // Questions table
   await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
 
-  // Footer — fixed at the bottom of the page
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
-  doc.text('Page 1 of 1   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,pageH-7);
+  buddyPDFPageNumbers(doc);
 
   const fname='InquiBuddy_'+escHtml(buddyState.schoolCode)+'_Team'+escHtml(String(buddyState.teamId))+'_'+new Date().toISOString().slice(0,10)+'.pdf';
   doc.save(fname);
@@ -4768,22 +4772,6 @@ async function sbGenerateFeedback(ctx='sb'){
 
 // -------- PDF HELPERS (school buddy) --------
 
-function sbBuddyPDFHeader(doc, pageW){
-  doc.setFillColor(13,59,74);
-  doc.rect(0,0,pageW,28,'F');
-  doc.setFontSize(9); doc.setTextColor(0,191,255);
-  doc.text('THINK AND MAKE 2026-27',12,10);
-  doc.setFontSize(13); doc.setTextColor(255,255,255); doc.setFont(undefined,'bold');
-  doc.text('Inqui Buddy — Evaluation Report',12,20);
-  return 36;
-}
-
-function sbBuddyPDFFooter(doc, pageW, pageH, pageNum, totalPages){
-  doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont(undefined,'normal');
-  doc.text('Inqui-Lab Foundation · Think & Make 2026-27',12,pageH-8);
-  doc.text('Page '+pageNum+' of '+totalPages,pageW-30,pageH-8);
-}
-
 function sbWrapText(doc, text, x, y, maxW, lineH, pageH, marginB, onNewPage){
   const lines = doc.splitTextToSize(text, maxW);
   for(let i=0;i<lines.length;i++){
@@ -4807,8 +4795,6 @@ async function sbDownloadTeamPDF(teamCode){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
-
-  const ml=12, pageH=297;
 
   const details=[
     ['School',schoolBuddyState.school+' ('+schoolBuddyState.schoolCode+')'],
@@ -4859,9 +4845,7 @@ async function sbDownloadTeamPDF(teamCode){
   // Questions table
   await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
 
-  // Footer — fixed at the bottom of the page
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
-  doc.text('Page 1 of 1   |   Inqui Buddy   |   Inqui-Lab Foundation   |   Think & Make 2026-27',ml,pageH-7);
+  buddyPDFPageNumbers(doc);
 
   const date=new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('InquiBuddy_'+schoolBuddyState.schoolCode+'_Team'+teamCode+'_'+date+'.pdf');
@@ -4879,7 +4863,6 @@ async function sbDownloadAllPDF(){
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
 
-  const ml=12, pageW=210, pageH=297;
   let firstTeam=true;
 
   for(const team of teams){
@@ -4941,15 +4924,7 @@ async function sbDownloadAllPDF(){
     await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
   }
 
-  // Page numbers + footers fixed at the bottom of each page
-  const totalPages=doc.getNumberOfPages();
-  for(let p=1;p<=totalPages;p++){
-    doc.setPage(p);
-    const footerY=pageH-7;
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(170,170,170);
-    doc.text('Page '+p+' of '+totalPages,pageW-ml,footerY,{align:'right'});
-    doc.text('Inqui Buddy  |  Inqui-Lab Foundation  |  Think & Make 2026-27',ml,footerY);
-  }
+  buddyPDFPageNumbers(doc);
 
   const date=new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('InquiBuddy_'+schoolBuddyState.schoolCode+'_Gr'+schoolBuddyState.grade+schoolBuddyState.section+'_AllTeams_'+date+'.pdf');
