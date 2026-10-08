@@ -3682,84 +3682,110 @@ function renderBuddyFeedback(text){
 
 // -------- INQUI BUDDY — PDF HELPERS --------
 
+const TELUGU_RE=/[ఀ-౿]/;
+
+// Strips markdown (**bold**, # headings) and normalises header variants from the AI
+// (e.g. "**Telugu Questions:**") to the canonical ENGLISH_INTRO / ENGLISH_QUESTIONS / TELUGU_INTRO / TELUGU_QUESTIONS
+function normalizeBuddyFeedback(text){
+  return String(text||'')
+    .replace(/\r\n?/g,'\n')
+    .replace(/\*\*|__/g,'')
+    .replace(/^[ \t]*#+[ \t]*/gm,'')
+    .replace(/^[ \t]*(ENGLISH|TELUGU)[ _-]*(INTRO(?:DUCTION)?|QUESTIONS)[ \t]*:?[ \t]*$/gim,(m,lang,kind)=>
+      lang.toUpperCase()+'_'+(/^Q/i.test(kind)?'QUESTIONS':'INTRO')+':')
+    .replace(/^[ \t]*(ENGLISH|TELUGU)[ _-]*(INTRO(?:DUCTION)?|QUESTIONS)[ \t]*:/gim,(m,lang,kind)=>
+      lang.toUpperCase()+'_'+(/^Q/i.test(kind)?'QUESTIONS':'INTRO')+':');
+}
+
+// Bullet lines ("- ", "* ", "• ", "1. ", "1) ") with the marker removed
+function buddyBullets(text){
+  return String(text||'').split('\n')
+    .filter(l=>/^\s*(?:[-*•]|\d+[.)])\s+/.test(l))
+    .map(l=>l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/,'').trim())
+    .filter(Boolean);
+}
+
+// Text after `header` up to the next ALL-CAPS section header (or end)
+function buddySection(text, header){
+  const idx=text.indexOf(header);
+  if(idx===-1) return null;
+  const after=text.slice(idx+header.length);
+  const end=after.search(/\n\s*[A-Z][A-Z_ ]+:/);
+  return end!==-1?after.slice(0,end):after;
+}
+
 function extractBuddyQuestions(feedbackText){
+  const t=normalizeBuddyFeedback(feedbackText);
+  const eng=qs=>qs.filter(q=>!TELUGU_RE.test(q)); // Telugu bullets never belong in the English column
   // New format: ENGLISH_QUESTIONS:
-  const newIdx=feedbackText.indexOf('ENGLISH_QUESTIONS:');
-  if(newIdx!==-1){
-    const after=feedbackText.slice(newIdx+18);
-    const end=after.search(/\n\n?[A-Z_]+:/);
-    const section=end!==-1?after.slice(0,end):after;
-    const qs=section.trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
-    if(qs.length) return qs;
-  }
+  const sec=buddySection(t,'ENGLISH_QUESTIONS:');
+  if(sec!==null){ const qs=eng(buddyBullets(sec)); if(qs.length) return qs; }
   // Old bilingual format: ENGLISH: ... TELUGU: ...
-  const engIdx=feedbackText.indexOf('ENGLISH:');
+  const engIdx=t.indexOf('ENGLISH:');
   if(engIdx!==-1){
-    const telIdx=feedbackText.indexOf('TELUGU:',engIdx);
-    const engContent=telIdx!==-1?feedbackText.slice(engIdx+8,telIdx):feedbackText.slice(engIdx+8);
-    const qs=engContent.trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+    const telIdx=t.indexOf('TELUGU:',engIdx);
+    const qs=eng(buddyBullets(telIdx!==-1?t.slice(engIdx+8,telIdx):t.slice(engIdx+8)));
     if(qs.length) return qs;
   }
   // Old 4-section format: extract THINGS TO THINK MORE ABOUT section
-  const sectionMatch=feedbackText.match(/THINGS TO THINK MORE ABOUT:\s*([\s\S]*?)(?:\n\n[A-Z]|$)/);
-  if(sectionMatch){
-    return sectionMatch[1].trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
-  }
+  const sectionMatch=t.match(/THINGS TO THINK MORE ABOUT:\s*([\s\S]*?)(?:\n\n[A-Z]|$)/);
+  if(sectionMatch) return eng(buddyBullets(sectionMatch[1]));
   // English-only bullet format
-  return feedbackText.trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+  return eng(buddyBullets(t));
 }
 
 function extractTeluguQuestions(feedbackText){
+  const t=normalizeBuddyFeedback(feedbackText);
   // New format: TELUGU_QUESTIONS:
-  const newIdx=feedbackText.indexOf('TELUGU_QUESTIONS:');
-  if(newIdx!==-1){
-    const after=feedbackText.slice(newIdx+17);
-    const end=after.search(/\n\n?[A-Z_]+:/);
-    const section=end!==-1?after.slice(0,end):after;
-    const qs=section.trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
-    if(qs.length) return qs;
-  }
+  const sec=buddySection(t,'TELUGU_QUESTIONS:');
+  if(sec!==null){ const qs=buddyBullets(sec); if(qs.length) return qs; }
   // Old format: TELUGU:
-  const idx=feedbackText.indexOf('TELUGU:');
-  if(idx===-1) return [];
-  return feedbackText.slice(idx+7).trim().split('\n').filter(l=>l.trim().startsWith('-')).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+  const idx=t.indexOf('TELUGU:');
+  if(idx!==-1){ const qs=buddyBullets(t.slice(idx+7)); if(qs.length) return qs; }
+  // Fallback: any bullet written in Telugu script
+  return buddyBullets(t).filter(q=>TELUGU_RE.test(q));
 }
 
 function extractBuddyIntro(feedbackText){
-  const m=feedbackText.match(/ENGLISH_INTRO:\s*([\s\S]*?)(?:\n\n?ENGLISH_QUESTIONS:)/);
-  return m?m[1].trim():'';
+  const sec=buddySection(normalizeBuddyFeedback(feedbackText),'ENGLISH_INTRO:');
+  return sec?sec.trim():'';
 }
 
 function extractTeluguIntro(feedbackText){
-  const m=feedbackText.match(/TELUGU_INTRO:\s*([\s\S]*?)(?:\n\n?TELUGU_QUESTIONS:|$)/);
-  return m?m[1].trim():'';
+  const sec=buddySection(normalizeBuddyFeedback(feedbackText),'TELUGU_INTRO:');
+  return sec?sec.trim():'';
 }
 
 async function loadTeluguFont(){
   const FONT_NAME='Noto Sans Telugu';
-  if(document.fonts.check('12px "'+FONT_NAME+'"')) return true;
-  const FONT_URLS=[
-    'https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSansTelugu/NotoSansTelugu-Regular.ttf',
-    'https://fonts.gstatic.com/s/notosanstelugu/v31/0nksC9P7MfYHj2oFtYm2ChTjgPvNiA.ttf'
-  ];
-  for(const url of FONT_URLS){
-    try{
-      const face=new FontFace(FONT_NAME,'url('+url+')');
-      const loaded=await face.load();
-      document.fonts.add(loaded);
-      await document.fonts.ready;
-      return true;
-    }catch(e){ continue; }
-  }
-  return false;
+  if(document.fonts.check('12px "'+FONT_NAME+'"','తెలుగు')) return true;
+  try{
+    const face=new FontFace(FONT_NAME,'url(https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSansTelugu/NotoSansTelugu-Regular.ttf)');
+    document.fonts.add(await face.load());
+    return true;
+  }catch(e){}
+  // Fallback: Google Fonts stylesheet
+  try{
+    if(!document.getElementById('notoTeluguCss')){
+      const link=document.createElement('link');
+      link.id='notoTeluguCss'; link.rel='stylesheet';
+      link.href='https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu&display=swap';
+      document.head.appendChild(link);
+      await new Promise(res=>{ link.onload=res; link.onerror=res; setTimeout(res,5000); });
+    }
+    const faces=await document.fonts.load('12px "'+FONT_NAME+'"','తెలుగు');
+    if(faces.length) return true;
+  }catch(e){}
+  return false; // renderTeluguCell still falls back to system Telugu fonts
 }
 
 function renderTeluguCell(text, colWidthMm, lineHmm, color){
   const pxPerMm=96/25.4, fontPx=11, scale=2;
   const maxWpx=colWidthMm*pxPerMm;
   const lineHpx=fontPx*1.6;
+  const font=fontPx+'px "Noto Sans Telugu","Nirmala UI","Gautami","Noto Sans",sans-serif';
   const tmp=document.createElement('canvas').getContext('2d');
-  tmp.font=fontPx+'px "Noto Sans Telugu"';
+  tmp.font=font;
   const words=text.split(' ');
   const lines=[]; let cur='';
   for(const w of words){
@@ -3774,7 +3800,7 @@ function renderTeluguCell(text, colWidthMm, lineHmm, color){
   canvas.width=Math.ceil(maxWpx*scale); canvas.height=Math.ceil((lines.length*lineHpx+botPad)*scale);
   const ctx=canvas.getContext('2d');
   ctx.scale(scale,scale);
-  ctx.font=fontPx+'px "Noto Sans Telugu"';
+  ctx.font=font;
   ctx.fillStyle=color||'#282828';
   lines.forEach((ln,i)=>ctx.fillText(ln,0,(i+1)*lineHpx-fontPx*0.25));
   return { dataUri:canvas.toDataURL('image/png'), heightMm:(lines.length*lineHpx+botPad)/pxPerMm, lineCount:lines.length };
@@ -3866,7 +3892,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
   if(engIntro){
     const introLines=doc.setFont('helvetica','normal').setFontSize(fs).splitTextToSize(engIntro,colW-6);
     let telIntroImg=null;
-    if(teluguAvailable && telIntro){
+    if(telIntro){
       try{ telIntroImg=renderTeluguCell(telIntro,colW-7,lineH); }catch(e){}
     }
     const introRowH=Math.max(introLines.length*engLH,telIntroImg?telIntroImg.heightMm:0)+rowPad*2;
@@ -3887,12 +3913,10 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     doc.rect(ml,y,colW,subH,'F'); doc.rect(telX,y,colW,subH,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(fs); doc.setTextColor(255,255,255);
     doc.text('Reflective Questions',ml+3,y+4.8);
-    if(teluguAvailable){
+    try{
       const subImg=renderTeluguCell('ప్రతిబింబ ప్రశ్నలు',colW-7,lineH,'#ffffff');
-      if(subImg){ try{ doc.addImage(subImg.dataUri,'PNG',telX+2,y+1,colW-5,Math.min(subImg.heightMm,subH-1)); }catch(e){} }
-    } else {
-      doc.text('ప్రతిబింబ ప్రశ్నలు',telX+3,y+4.8);
-    }
+      doc.addImage(subImg.dataUri,'PNG',telX+2,y+1,colW-5,Math.min(subImg.heightMm,subH-1));
+    }catch(e){}
     y+=subH;
   }
 
@@ -3902,7 +3926,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     const engLines=doc.setFont('helvetica','normal').setFontSize(fs).splitTextToSize(engText,colW-6);
     // Render Telugu cell as canvas PNG (browser handles complex shaping natively)
     let telImg=null;
-    if(teluguAvailable && telQs[i]){
+    if(telQs[i]){
       try{ telImg=renderTeluguCell(telText,colW-7,lineH); }catch(e){}
     }
     const rowH=Math.max(engLines.length*engLH,telImg?telImg.heightMm:0)+rowPad*2;
@@ -3925,9 +3949,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
   const telInstr='ఈ ప్రశ్నలను మీ టీమ్‌తో చర్చించి, మీ ఆలోచనలో మార్పులు చేసి, చివరి ఆలోచనను మళ్లీ గీయండి (Draw cheyandi).';
   const instrLines=doc.setFont('helvetica','italic').setFontSize(fs).splitTextToSize(engInstr,colW-6);
   let telInstrImg=null;
-  if(teluguAvailable){
-    try{ telInstrImg=renderTeluguCell(telInstr,colW-7,lineH,'#5d4000'); }catch(e){}
-  }
+  try{ telInstrImg=renderTeluguCell(telInstr,colW-7,lineH,'#5d4000'); }catch(e){}
   const instrRowH=Math.max(instrLines.length*engLH,telInstrImg?telInstrImg.heightMm:0)+rowPad*2;
   doc.setFillColor(255,248,225);
   doc.rect(ml,y,colW,instrRowH,'F'); doc.rect(telX,y,colW,instrRowH,'F');
