@@ -2009,7 +2009,6 @@ function handleSaveIdeaArtifact(payload) {
   var grade        = (payload.grade      || '').trim();
   var section      = (payload.section    || '').trim().toUpperCase();
   var school       = payload.school      || '';
-  var partner      = payload.partner     || '';
   var slName       = payload.slName      || '';
   var clusterId    = payload.clusterId   || '';
   var students     = payload.students    || [];
@@ -2022,6 +2021,8 @@ function handleSaveIdeaArtifact(payload) {
   }
 
   var ss = getSheet();
+  // Resolve partner from school code (same as getSchoolBuddyTeams) so all buddy calls hit the same sheet
+  var partner = getPartnerForSchool(ss, schoolCode) || payload.partner || '';
   var pConfig = getPartnerConfig(ss);
   var pEntry  = pConfig[partner] || {};
   var partnerFolderId = pEntry.folderId || '';
@@ -2089,13 +2090,13 @@ function handleGenerateSectionFeedback(payload) {
   var schoolCode = (payload.schoolCode || '').trim().toUpperCase();
   var grade      = (payload.grade      || '').trim();
   var section    = (payload.section    || '').trim().toUpperCase();
-  var partner    = payload.partner     || '';
 
   if (!schoolCode || !grade || !section) {
     return json({ status: 'error', message: 'schoolCode, grade and section required' });
   }
 
   var ss = getSheet();
+  var partner = getPartnerForSchool(ss, schoolCode) || payload.partner || '';
   var pConfig = getPartnerConfig(ss);
   var pEntry  = pConfig[partner] || {};
 
@@ -2167,6 +2168,15 @@ function handleGenerateSectionFeedback(payload) {
     results.push({ teamCode: teamCode, feedback: feedback, evalCount: currentCount + 1 });
   }
 
+  // Report requested teams that matched no row with a photo, instead of skipping them silently
+  if (teamCodesFilter) {
+    teamCodesFilter.forEach(function(tc) {
+      var handled = results.some(function(r) { return r.teamCode === tc; }) ||
+                    errors.some(function(e) { return e.teamCode === tc; });
+      if (!handled) errors.push({ teamCode: tc, error: 'No uploaded photo found for this team in Section ' + section });
+    });
+  }
+
   return json({ status: 'ok', results: results, errors: errors });
 }
 
@@ -2174,13 +2184,13 @@ function handleGetTeamPhoto(payload) {
   var schoolCode = (payload.schoolCode || '').trim().toUpperCase();
   var teamCode   = (payload.teamCode   || '').trim();
   var grade      = (payload.grade      || '').trim();
-  var partner    = (payload.partner    || '').trim();
 
   if (!schoolCode || !teamCode) {
     return json({ status: 'error', message: 'schoolCode and teamCode required' });
   }
 
   var ss = getSheet();
+  var partner = getPartnerForSchool(ss, schoolCode) || (payload.partner || '').trim();
   var pConfig = getPartnerConfig(ss);
   var pEntry  = pConfig[partner] || {};
   var partnerFolderId = pEntry.folderId || '';

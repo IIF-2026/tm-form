@@ -4713,6 +4713,7 @@ async function sbGenerateFeedback(ctx='sb'){
   );
   statusEl.textContent='Uploading ideas (0/'+teamsToUpload.length+')…';
   let uploaded=0;
+  const uploadedCodes=[], errors=[];
   for(const t of teamsToUpload){
     const art=schoolBuddyState.localArtifacts[t.teamCode];
     try{
@@ -4733,8 +4734,11 @@ async function sbGenerateFeedback(ctx='sb'){
         t.photoMime=art.photoMime||'image/jpeg';
         const ps=$('sbPhotoStatus-'+t.teamCode);
         if(ps) ps.innerHTML='&#10003; Uploaded';
+        uploadedCodes.push(t.teamCode);
+      } else {
+        errors.push({teamCode:t.teamCode, error:'Photo upload failed: '+(jp.message||'unknown error')});
       }
-      if(art.audioBase64){
+      if(jp.status==='ok' && art.audioBase64){
         const ra=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
           body:JSON.stringify({
             action:'saveIdeaArtifact', token:s.token,
@@ -4748,46 +4752,72 @@ async function sbGenerateFeedback(ctx='sb'){
         const ja=await ra.json();
         if(ja.status==='ok') t.audioUrl=ja.fileUrl||'uploaded';
       }
-    }catch(e){ /* non-fatal per team */ }
+    }catch(e){
+      if(!uploadedCodes.includes(t.teamCode)) errors.push({teamCode:t.teamCode, error:'Photo upload failed: could not reach server'});
+    }
     uploaded++;
     statusEl.textContent='Uploading ideas ('+uploaded+'/'+teamsToUpload.length+')…';
   }
 
-  // Step 2: Generate feedback only for the teams uploaded this session
-  const uploadedCodes = teamsToUpload.map(t => t.teamCode);
-  statusEl.textContent='Generating AI feedback… this may take a few minutes.';
+  // Step 2: Generate feedback one team per request (keeps each Apps Script run well under the 6-min limit)
+  let generated=0;
+  for(let i=0;i<uploadedCodes.length;i++){
+    const code=uploadedCodes[i];
+    statusEl.textContent='Generating AI feedback ('+(i+1)+'/'+uploadedCodes.length+')…';
+    try{
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({
+          action:'generateSectionFeedback', token:s.token,
+          schoolCode:schoolBuddyState.schoolCode,
+          grade:schoolBuddyState.grade, section:schoolBuddyState.section,
+          partner:schoolBuddyState.partner,
+          teamCodes:[code]
+        })});
+      const j=await r.json();
+      if(j.status==='ok'){
+        (j.results||[]).forEach(res=>{
+          const team=schoolBuddyState.teams.find(x=>x.teamCode===res.teamCode);
+          if(team){ team.evalCount=res.evalCount; team.feedbackText=res.feedback; }
+          delete schoolBuddyState.localArtifacts[res.teamCode];
+          sbUpdateTeamStatus(res.teamCode);
+          generated++;
+        });
+        (j.errors||[]).forEach(e=>errors.push(e));
+      } else {
+        errors.push({teamCode:code, error:j.message||'Generation failed'});
+      }
+    }catch(e){
+      errors.push({teamCode:code, error:'Could not reach server'});
+    }
+  }
+
+  // Step 3: Reload saved feedback for all teams so Download All includes every evaluated team
   try{
-    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({
-        action:'generateSectionFeedback', token:s.token,
-        schoolCode:schoolBuddyState.schoolCode,
-        grade:schoolBuddyState.grade, section:schoolBuddyState.section,
-        partner:schoolBuddyState.partner,
-        teamCodes: uploadedCodes
-      })});
+    const r=await fetch(url+'?action=getSchoolBuddyTeams'
+      +'&schoolCode='+encodeURIComponent(schoolBuddyState.schoolCode)
+      +'&grade='+encodeURIComponent(schoolBuddyState.grade)
+      +'&section='+encodeURIComponent(schoolBuddyState.section)
+      +'&token='+encodeURIComponent(s.token));
     const j=await r.json();
     if(j.status==='ok'){
-      const results=j.results||[];
-      results.forEach(res=>{
-        const team=schoolBuddyState.teams.find(x=>x.teamCode===res.teamCode);
-        if(team){ team.evalCount=res.evalCount; team.feedbackText=res.feedback; }
-        delete schoolBuddyState.localArtifacts[res.teamCode];
-        sbUpdateTeamStatus(res.teamCode);
+      (j.teams||[]).forEach(srv=>{
+        const team=schoolBuddyState.teams.find(x=>x.teamCode===srv.teamCode);
+        if(team && srv.feedbackText && srv.evalCount>=(team.evalCount||0)){
+          team.feedbackText=srv.feedbackText; team.evalCount=srv.evalCount;
+          sbUpdateTeamStatus(team.teamCode);
+        }
       });
-      sbUpdateButtons();
-      const n=results.length, errs=(j.errors||[]);
-      let msg='&#10003; Feedback generated for '+n+' team'+(n!==1?'s':'');
-      if(errs.length){
-        msg+=' ('+errs.length+' error'+(errs.length>1?'s':'')+')';
-        errs.forEach(e=>{ msg+='<br><small style="color:var(--err)">'+e.teamCode+': '+e.error+'</small>'; });
-      }
-      statusEl.style.color='var(--ok)'; statusEl.innerHTML=msg;
-    } else {
-      statusEl.style.color='var(--err)'; statusEl.textContent='Error: '+(j.message||'Generation failed');
     }
-  }catch(e){
-    statusEl.style.color='var(--err)'; statusEl.textContent='Could not reach server. Check connection.';
+  }catch(e){ /* non-fatal: local results are still available */ }
+  sbUpdateButtons();
+
+  let msg='&#10003; Feedback generated for '+generated+' team'+(generated!==1?'s':'');
+  if(errors.length){
+    msg+=' ('+errors.length+' error'+(errors.length>1?'s':'')+')';
+    errors.forEach(e=>{ msg+='<br><small style="color:var(--err)">'+escHtml(e.teamCode)+': '+escHtml(e.error)+'</small>'; });
   }
+  statusEl.style.color=generated||!errors.length ? 'var(--ok)' : 'var(--err)';
+  statusEl.innerHTML=msg;
   genBtn.disabled=false;
   if(dlBtn) dlBtn.disabled=false;
 }
