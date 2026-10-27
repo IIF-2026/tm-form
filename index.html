@@ -4833,6 +4833,43 @@ function sbWrapText(doc, text, x, y, maxW, lineH, pageH, marginB, onNewPage){
   return y;
 }
 
+// Idea photo as a downscaled JPEG data URI for the PDF. Photos can be full camera size (e.g. 4096x2304);
+// drawing them at full size exhausts phone memory partway through Download All, so cap the longest side.
+const SB_PDF_PHOTO_MAX=1280;
+async function sbTeamPhotoJpeg(team){
+  const localArt=schoolBuddyState.localArtifacts[team.teamCode];
+  let b64=localArt?.photoBase64||team.photoBase64;
+  let mime=localArt?.photoMime||team.photoMime||'image/jpeg';
+  if(!b64){
+    const s=getSession(), cfgUrl=getCfg().url;
+    let lastErr='';
+    for(let attempt=0;attempt<2&&!b64;attempt++){
+      try{
+        const r=await fetch(cfgUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body:JSON.stringify({action:'getTeamPhoto',token:s.token,
+            schoolCode:schoolBuddyState.schoolCode,teamCode:team.teamCode,
+            grade:schoolBuddyState.grade,partner:schoolBuddyState.partner})});
+        const jr=await r.json();
+        if(jr.status==='ok'&&jr.base64){ b64=jr.base64; mime=jr.mime||'image/jpeg'; }
+        else { lastErr=/no photo/i.test(jr.message||'')?'no photo':(jr.message||'no photo'); if(jr.status==='error') break; }
+      }catch(e){ lastErr='could not reach server'; }
+    }
+    if(!b64) return {error:lastErr||'no photo'};
+  }
+  try{
+    const img=new Image();
+    const ok=await new Promise(res=>{ img.onload=()=>res(true); img.onerror=()=>res(false); img.src='data:'+mime+';base64,'+b64; });
+    if(!ok||!img.naturalWidth) return {error:'image could not be decoded'};
+    const scale=Math.min(1,SB_PDF_PHOTO_MAX/Math.max(img.naturalWidth,img.naturalHeight));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.round(img.naturalWidth*scale); canvas.height=Math.round(img.naturalHeight*scale);
+    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+    const dataUri=canvas.toDataURL('image/jpeg',0.8);
+    canvas.width=canvas.height=0; img.src=''; // release memory before the next team
+    return dataUri.length>100 ? {dataUri} : {error:'image could not be converted'};
+  }catch(e){ return {error:e.message||String(e)}; }
+}
+
 async function sbDownloadTeamPDF(teamCode){
   const team=schoolBuddyState.teams.find(t=>t.teamCode===teamCode);
   if(!team){ toast('Team not found.'); return; }
@@ -4858,41 +4895,10 @@ async function sbDownloadTeamPDF(teamCode){
     ['Students',(team.students||[]).join(', ')||'—']
   ];
 
-  // Idea Image — build JPEG from local base64 or Drive
-  const localArt=schoolBuddyState.localArtifacts[teamCode];
-  const photoB64=localArt?.photoBase64||team.photoBase64;
-  const photoMime=localArt?.photoMime||team.photoMime||'image/jpeg';
-  let jpegUrl=null;
-  if(photoB64){
-    try{
-      const dataUri='data:'+photoMime+';base64,'+photoB64;
-      const tmpImg=new Image();
-      await new Promise(res=>{ tmpImg.onload=res; tmpImg.onerror=res; tmpImg.src=dataUri; });
-      const canvas=document.createElement('canvas');
-      canvas.width=tmpImg.naturalWidth||800; canvas.height=tmpImg.naturalHeight||600;
-      canvas.getContext('2d').drawImage(tmpImg,0,0);
-      jpegUrl=canvas.toDataURL('image/jpeg',0.85);
-    }catch(e){}
-  } else {
-    try{
-      const s=getSession(), cfgUrl=getCfg().url;
-      const r=await fetch(cfgUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:'getTeamPhoto',token:s.token,
-          schoolCode:schoolBuddyState.schoolCode,teamCode,
-          grade:schoolBuddyState.grade,partner:schoolBuddyState.partner})});
-      const jr=await r.json();
-      if(jr.status==='ok'&&jr.base64){
-        const dataUri='data:'+jr.mime+';base64,'+jr.base64;
-        const tmpImg=new Image();
-        await new Promise(res=>{ tmpImg.onload=res; tmpImg.onerror=res; tmpImg.src=dataUri; });
-        const canvas=document.createElement('canvas');
-        canvas.width=tmpImg.naturalWidth||800; canvas.height=tmpImg.naturalHeight||600;
-        canvas.getContext('2d').drawImage(tmpImg,0,0);
-        jpegUrl=canvas.toDataURL('image/jpeg',0.85);
-      }
-    }catch(e){}
-  }
-  const tableY=buddyPDFDrawTop(doc,details,jpegUrl,'Idea image');
+  // Idea Image — downscaled JPEG from local base64 or Drive
+  const photo=await sbTeamPhotoJpeg(team);
+  if(photo.error) console.warn('Inqui Buddy PDF photo '+teamCode+': '+photo.error);
+  const tableY=buddyPDFDrawTop(doc,details,photo.dataUri||null,photo.error==='no photo'?'Idea image not available':'Photo could not be loaded');
 
   // Questions table
   await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);
@@ -4936,41 +4942,10 @@ async function sbDownloadAllPDF(){
       ['Students',(team.students||[]).join(', ')||'—']
     ];
 
-    // Idea Image
-    const localArt=schoolBuddyState.localArtifacts[team.teamCode];
-    const photoB64=localArt?.photoBase64||team.photoBase64;
-    const photoMime=localArt?.photoMime||team.photoMime||'image/jpeg';
-    let jpegUrl=null;
-    if(photoB64){
-      try{
-        const dataUri='data:'+photoMime+';base64,'+photoB64;
-        const tmpImg=new Image();
-        await new Promise(res=>{ tmpImg.onload=res; tmpImg.onerror=res; tmpImg.src=dataUri; });
-        const canvas=document.createElement('canvas');
-        canvas.width=tmpImg.naturalWidth||800; canvas.height=tmpImg.naturalHeight||600;
-        canvas.getContext('2d').drawImage(tmpImg,0,0);
-        jpegUrl=canvas.toDataURL('image/jpeg',0.85);
-      }catch(e){}
-    } else {
-      try{
-        const s=getSession(), cfgUrl=getCfg().url;
-        const r=await fetch(cfgUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-          body:JSON.stringify({action:'getTeamPhoto',token:s.token,
-            schoolCode:schoolBuddyState.schoolCode,teamCode:team.teamCode,
-            grade:schoolBuddyState.grade,partner:schoolBuddyState.partner})});
-        const jr=await r.json();
-        if(jr.status==='ok'&&jr.base64){
-          const dataUri='data:'+jr.mime+';base64,'+jr.base64;
-          const tmpImg=new Image();
-          await new Promise(res=>{ tmpImg.onload=res; tmpImg.onerror=res; tmpImg.src=dataUri; });
-          const canvas=document.createElement('canvas');
-          canvas.width=tmpImg.naturalWidth||800; canvas.height=tmpImg.naturalHeight||600;
-          canvas.getContext('2d').drawImage(tmpImg,0,0);
-          jpegUrl=canvas.toDataURL('image/jpeg',0.85);
-        }
-      }catch(e){}
-    }
-    const tableY=buddyPDFDrawTop(doc,details,jpegUrl,'Idea image not available');
+    // Idea Image — downscaled JPEG from local base64 or Drive
+    const photo=await sbTeamPhotoJpeg(team);
+    if(photo.error) console.warn('Inqui Buddy PDF photo '+team.teamCode+': '+photo.error);
+    const tableY=buddyPDFDrawTop(doc,details,photo.dataUri||null,photo.error==='no photo'?'Idea image not available':'Photo could not be loaded');
 
     // Questions table
     await buddyPDFDrawTable(doc,engQs,telQs,teluguLoaded,tableY,engIntro,telIntro);

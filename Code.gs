@@ -2202,21 +2202,21 @@ function handleGetTeamPhoto(payload) {
   var iTc = tabHdr.indexOf('TeamCode');
   var iPh = tabHdr.indexOf('IdeaPhotoURL');
 
+  // Use the first row for this team that actually has a photo (duplicate rows may be empty)
   var photoUrl = '';
   for (var i = 1; i < tabData.length; i++) {
-    if (String(tabData[i][iTc] || '').trim() === teamCode) {
-      photoUrl = String(tabData[i][iPh] || '').trim();
-      break;
-    }
+    if (String(tabData[i][iTc] || '').trim() !== teamCode) continue;
+    photoUrl = String(tabData[i][iPh] || '').trim();
+    if (photoUrl) break;
   }
 
   if (!photoUrl) return json({ status: 'error', message: 'No photo found for team' });
 
-  var match = photoUrl.match(/\/d\/([^\/\?]+)/);
-  if (!match) return json({ status: 'error', message: 'Invalid Drive URL format' });
+  var fileId = extractDriveFileId(photoUrl);
+  if (!fileId) return json({ status: 'error', message: 'Invalid Drive URL format' });
 
   try {
-    var file = DriveApp.getFileById(match[1]);
+    var file = DriveApp.getFileById(fileId);
     var mime = file.getMimeType() || 'image/jpeg';
     var b64  = Utilities.base64Encode(file.getBlob().getBytes());
     return json({ status: 'ok', base64: b64, mime: mime });
