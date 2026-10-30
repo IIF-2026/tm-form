@@ -2051,19 +2051,23 @@ function handleGetSchoolBuddyTeams(p) {
         var fbData   = fbTab.getDataRange().getValues();
         var fbHeader = fbData[0];
         var fTc   = fbHeader.indexOf('TeamCode');
-        var fSec  = fbHeader.indexOf('Section');
         var fPh   = fbHeader.indexOf('IdeaPhotoURL');
         var fAu   = fbHeader.indexOf('AudioURL');
         var fFb   = fbHeader.indexOf('FeedbackText');
         var fEc   = fbHeader.indexOf('EvalCount');
+        // teamMap only holds this section's teams, so rows are matched by team code
+        // (not the row's Section value, which older rows may have wrong). Duplicate
+        // rows are merged so an empty row can't hide a photo or feedback.
         for (var j = 1; j < fbData.length; j++) {
-          if (String(fbData[j][fSec] || '').trim().toUpperCase() !== section) continue;
           var ftc = String(fbData[j][fTc] || '').trim();
           if (!ftc || !teamMap[ftc]) continue;
-          teamMap[ftc].photoUrl     = String(fbData[j][fPh] || '').trim();
-          teamMap[ftc].audioUrl     = String(fbData[j][fAu] || '').trim();
-          teamMap[ftc].feedbackText = String(fbData[j][fFb] || '').trim();
-          teamMap[ftc].evalCount    = Number(fbData[j][fEc] || 0);
+          var tm = teamMap[ftc];
+          var rowFb = String(fbData[j][fFb] || '').trim();
+          var rowEc = Number(fbData[j][fEc] || 0);
+          tm.photoUrl = tm.photoUrl || String(fbData[j][fPh] || '').trim();
+          tm.audioUrl = tm.audioUrl || String(fbData[j][fAu] || '').trim();
+          if (rowFb && (!tm.feedbackText || rowEc >= tm.evalCount)) tm.feedbackText = rowFb;
+          tm.evalCount = Math.max(tm.evalCount, rowEc);
         }
       }
     } catch(e) { Logger.log('getSchoolBuddyTeams idea status error: ' + e.message); }
@@ -2137,11 +2141,22 @@ function handleSaveIdeaArtifact(payload) {
     if (String(tabData[i][iTc] || '').trim() === teamCode) { existRow = i + 1; break; }
   }
 
+  var studentNames = Array.isArray(students) ? students.join(', ') : String(students);
   if (existRow > 0) {
-    var updateCol = (artifactType === 'audio' ? iAu : iPh) + 1;
-    ideaTab.getRange(existRow, updateCol).setValue(fileUrl);
+    // Also rewrite the row's identity columns: older rows with a wrong or empty
+    // Section were invisible to the section-filtered reads, so re-uploading
+    // never made the team show up. Feedback/EvalCount are left as they are.
+    var rowVals = tabData[existRow - 1].slice();
+    var setCol = function(name, val) { var c = tabHdr.indexOf(name); if (c >= 0) rowVals[c] = val; };
+    setCol('Grade', grade); setCol('Section', section);
+    setCol('SchoolCode', schoolCode); setCol('School', school);
+    if (slName) setCol('SLName', slName);
+    if (clusterId) setCol('ClusterID', clusterId);
+    if (studentNames) setCol('StudentNames', studentNames);
+    if (submittedBy) setCol('SubmittedBy', submittedBy);
+    rowVals[artifactType === 'audio' ? iAu : iPh] = fileUrl;
+    ideaTab.getRange(existRow, 1, 1, rowVals.length).setValues([rowVals]);
   } else {
-    var studentNames = Array.isArray(students) ? students.join(', ') : String(students);
     var newRow = [
       makeUUID(), teamCode, slName, clusterId, grade, section,
       schoolCode, school, studentNames,
@@ -2198,12 +2213,17 @@ function handleGenerateSectionFeedback(payload) {
   var results = [];
   var errors  = [];
 
+  var doneTeams = {};
   for (var i = 1; i < tabData.length; i++) {
-    if (String(tabData[i][iSec] || '').trim().toUpperCase() !== section) continue;
     var teamCode = String(tabData[i][iTc] || '').trim();
-    if (teamCodesFilter && teamCodesFilter.indexOf(teamCode) === -1) continue;
+    if (teamCodesFilter) {
+      // Requested teams are matched by code (it already encodes the section), so
+      // an old row with a wrong Section value doesn't hide the uploaded photo.
+      if (teamCodesFilter.indexOf(teamCode) === -1) continue;
+    } else if (String(tabData[i][iSec] || '').trim().toUpperCase() !== section) continue;
     var photoUrl = String(tabData[i][iPh] || '').trim();
-    if (!photoUrl) continue;
+    if (!photoUrl || doneTeams[teamCode]) continue;
+    doneTeams[teamCode] = true;
 
     // Download photo from Drive
     var imageBase64 = null;
