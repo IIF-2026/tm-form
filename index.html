@@ -3956,7 +3956,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     doc.setFont('helvetica','normal'); doc.setFontSize(fs); doc.setTextColor(40,40,40);
     doc.text(introLines,ml+3,y+rowPad+engLH*0.8);
     if(telIntroImg){
-      try{ doc.addImage(telIntroImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telIntroImg.heightMm,introRowH-rowPad)); }catch(e){}
+      try{ doc.addImage(telIntroImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telIntroImg.heightMm,introRowH-rowPad),'','FAST'); }catch(e){}
     }
     y+=introRowH;
 
@@ -3968,7 +3968,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     doc.text('Reflective Questions',ml+3,y+4.8);
     try{
       const subImg=renderTeluguCell('ప్రతిబింబ ప్రశ్నలు',colW-7,lineH,'#ffffff');
-      doc.addImage(subImg.dataUri,'PNG',telX+2,y+1,colW-5,Math.min(subImg.heightMm,subH-1));
+      doc.addImage(subImg.dataUri,'PNG',telX+2,y+1,colW-5,Math.min(subImg.heightMm,subH-1),'','FAST');
     }catch(e){}
     y+=subH;
   }
@@ -3992,7 +3992,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
     doc.text(engLines,ml+3,y+rowPad+engLH*0.8);
     // Telugu image
     if(telImg){
-      try{ doc.addImage(telImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telImg.heightMm,rowH-rowPad)); }catch(e){}
+      try{ doc.addImage(telImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telImg.heightMm,rowH-rowPad),'','FAST'); }catch(e){}
     }
     y+=rowH;
   }
@@ -4010,7 +4010,7 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
   doc.setFont('helvetica','italic'); doc.setFontSize(fs); doc.setTextColor(93,64,0);
   doc.text(instrLines,ml+3,y+rowPad+engLH*0.8);
   if(telInstrImg){
-    try{ doc.addImage(telInstrImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telInstrImg.heightMm,instrRowH-rowPad)); }catch(e){}
+    try{ doc.addImage(telInstrImg.dataUri,'PNG',telX+2,y+rowPad,colW-5,Math.min(telInstrImg.heightMm,instrRowH-rowPad),'','FAST'); }catch(e){}
   }
   y+=instrRowH;
 
@@ -4986,18 +4986,44 @@ async function sbDownloadTeamPDF(teamCode){
   }
 }
 
+// Photos are fetched this many at a time; each getTeamPhoto call takes ~4 s,
+// so fetching them one by one made a 17-team PDF take over a minute.
+const SB_PDF_PHOTO_CONCURRENCY=4;
+
 async function sbDownloadAllPDF(){
   const teams=schoolBuddyState.teams.filter(t=>t.feedbackText&&extractBuddyQuestions(t.feedbackText).length);
   if(!teams.length){ toast('No feedback generated yet.'); return; }
 
+  // The same handler serves the school (sb) and IIF overview (bo) screens.
+  const btns=[$('sbDownloadAllBtn'),$('boDownloadAllBtn')].filter(Boolean);
+  if(btns.some(b=>b.disabled)) return;
+  const labels=btns.map(b=>b.innerHTML);
+  const setLabel=txt=>btns.forEach(b=>{ b.textContent=txt; });
+  btns.forEach(b=>{ b.disabled=true; });
+  setLabel('Preparing PDF…');
+  try{
   if(!(await loadJsPdf())) return;
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
 
+  // Idea images — downscaled JPEGs from local base64 or Drive, fetched in parallel
+  const photos=new Array(teams.length);
+  let next=0, done=0;
+  setLabel('Preparing PDF… 0/'+teams.length+' photos');
+  const worker=async()=>{
+    while(next<teams.length){
+      const i=next++;
+      photos[i]=await sbTeamPhotoJpeg(teams[i]);
+      setLabel('Preparing PDF… '+(++done)+'/'+teams.length+' photos');
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(SB_PDF_PHOTO_CONCURRENCY,teams.length)},worker));
+  setLabel('Building PDF…');
+
   let firstTeam=true;
 
-  for(const team of teams){
+  for(const [idx,team] of teams.entries()){
     if(!firstTeam) doc.addPage();
     firstTeam=false;
 
@@ -5016,8 +5042,8 @@ async function sbDownloadAllPDF(){
       ['Students',(team.students||[]).join(', ')||'—']
     ];
 
-    // Idea Image — downscaled JPEG from local base64 or Drive
-    const photo=await sbTeamPhotoJpeg(team);
+    const photo=photos[idx];
+    photos[idx]=null; // release the image data once it's on the page
     if(photo.error) console.warn('Inqui Buddy PDF photo '+team.teamCode+': '+photo.error);
     const tableY=buddyPDFDrawTop(doc,details,photo.dataUri||null,photo.error==='no photo'?'Idea image not available':'Photo could not be loaded');
 
@@ -5029,6 +5055,12 @@ async function sbDownloadAllPDF(){
 
   const date=new Date().toISOString().slice(0,10).replace(/-/g,'');
   doc.save('InquiBuddy_'+schoolBuddyState.schoolCode+'_Gr'+schoolBuddyState.grade+schoolBuddyState.section+'_AllTeams_'+date+'.pdf');
+  } catch(e){
+    console.error('sbDownloadAllPDF error:',e);
+    toast('PDF generation failed: '+(e.message||e));
+  } finally {
+    btns.forEach((b,i)=>{ b.innerHTML=labels[i]; b.disabled=false; });
+  }
 }
 
 /* ============================================================
