@@ -161,7 +161,6 @@
   .sb-wave-send{background:#22c55e!important;color:#fff!important}
   .sb-upload-ready{background:var(--ok)!important;color:#fff!important;border-color:var(--ok)!important}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -1041,9 +1040,19 @@ function schoolsCacheKey(){
   const url=getCfg().url;
   try{ return 'tm_schools_'+btoa(url).slice(0,16); }catch(e){ return 'tm_schools_default'; }
 }
-async function loadSchools(){
+// Callers that arrive while a request is in flight share it instead of
+// starting a second one.
+let _schoolsPromise=null;
+function loadSchools(){
+  if(!_schoolsPromise) _schoolsPromise=_loadSchools().finally(()=>{ _schoolsPromise=null; });
+  return _schoolsPromise;
+}
+function readCachedSchools(){
+  try{ SCHOOLS=JSON.parse(localStorage.getItem(schoolsCacheKey())||'[]'); }catch(e){ SCHOOLS=[]; }
+}
+async function _loadSchools(){
   const key=schoolsCacheKey();
-  try{ SCHOOLS=JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ SCHOOLS=[]; }
+  readCachedSchools();
   const url=getCfg().url;
   if(!url) return;
   try{
@@ -1656,6 +1665,34 @@ async function fetchSessionObs(url,code,level,token,yourName){
   return j;
 }
 
+// One request for the School Dashboard summary. Fills the same sessionStorage
+// keys as the individual fetchers so later reads are cache hits. Falls back to
+// the individual calls if the backend doesn't know the combined action.
+async function fetchSchoolDashSummary(url,code,token,needSd){
+  const f3=scGet('tm_f3subs_'+code), gc=scGet('tm_gradeConfig'), sd=needSd?scGet('tm_sd_'+code):null;
+  if(f3&&gc&&(!needSd||sd)) return [f3,gc,sd||undefined];
+  try{
+    const r=await fetch(url+'?action=schoolDashSummary&schoolCode='+encodeURIComponent(code)+(needSd?'&includeSchoolData=1':'')+'&token='+encodeURIComponent(token));
+    const j=await r.json();
+    // An error from the combined action is passed on as-is; only an older
+    // backend without it (ok status but no parts) uses the fallback below.
+    if(j.status!=='ok') return [j,j,needSd?j:undefined];
+    if(j.form3&&j.gradeConfig){
+      if(j.form3.status==='ok') scSet('tm_f3subs_'+code,j.form3);
+      if(j.gradeConfig.status==='ok') scSet('tm_gradeConfig',j.gradeConfig);
+      if(j.schoolData&&j.schoolData.status==='ok') scSet('tm_sd_'+code,j.schoolData);
+      Object.keys(j.sessionObs||{}).forEach(lvl=>{
+        const so=j.sessionObs[lvl];
+        if(so&&so.status==='ok') scSet('tm_so_'+code+'_L'+(parseInt(lvl)||lvl),so);
+      });
+      return [j.form3,j.gradeConfig,needSd?j.schoolData:undefined];
+    }
+  }catch(e){}
+  const fetches=[fetchForm3Subs(url,code,token), fetchGradeConfig(url,token)];
+  if(needSd) fetches.push(fetchSchoolData(url,code,token));
+  return Promise.all(fetches);
+}
+
 function sessionToken(){ const s=getSession(); return s?s.token:''; }
 function hasPerm(key){
   const s=getSession(); if(!s) return false;
@@ -1726,6 +1763,9 @@ async function bootAfterLogin(){
   $('hdrRoleBadge').innerHTML=`<span class="role-badge role-${role.toLowerCase()}">${role}</span>`;
   updateEnvChip();
   renderMenu();
+  // Use the cached school list right away so screens don't wait on the network.
+  readCachedSchools();
+  if(SCHOOLS.length){ refreshPartnerDropdowns(); refreshSchoolOptions(); refreshF2Schools(); }
   if(role==='School'){ showScreen('schoolDash'); }
   else { showScreen('home'); restoreDraft(); }
   updateQueueBanner(); netStatus(); updateBar();
@@ -1883,9 +1923,9 @@ async function loadSchoolDashboard(){
     `<div class="sec-title" style="margin-bottom:8px"><span class="tag">School</span> ${_schoolName}</div>`
     +(_partner?`<div style="font-size:13px;color:var(--muted);margin-bottom:4px">Partner: <b>${_partner}</b> &nbsp;&middot;&nbsp; Code: <b>${s.schoolCode}</b></div>`:'')
     +`<div style="font-size:13px;color:var(--muted)">Logged in as: <b>${s.name||'—'}</b></div>`;
-  $('sdContent').innerHTML='<p style="text-align:center;color:var(--muted);padding:40px 0">Loading…</p>';
   const url=getCfg().url;
   if(!url){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">Backend URL not set.</p>'; return; }
+  showSchoolMenu(true);
   try{
     const j=await fetchSchoolData(url, code, s.token);
     if(j.status!=='ok'){ $('sdContent').innerHTML='<p style="color:var(--err);padding:20px">'+j.message+'</p>'; return; }
@@ -1898,7 +1938,9 @@ function renderSchoolDashboard(data){
   showSchoolMenu();
 }
 
-function showSchoolMenu(){
+// pending=true renders the menu before school data arrives: form cards show
+// "Checking…" and are disabled until their submitted status is known.
+function showSchoolMenu(pending){
   $('hdrTitle').textContent='My School Dashboard';
   $('homeBtn').style.display='none';
   $('sdBuddyCard').style.display='none';
@@ -1918,6 +1960,12 @@ function showSchoolMenu(){
   FORMS.forEach(f=>{
     const submitted=!!(sdData&&sdData[f.dataKey]);
     let status, action, actionLabel, cardStyle;
+    if(pending){
+      html+=`<button disabled style="${btnSubmitted};cursor:default;opacity:.7">
+        ${f.title}<span style="font-size:12px;font-weight:400;color:var(--muted);vertical-align:middle;margin-left:8px">Checking…</span>
+      </button>`;
+      return;
+    }
     if(submitted){
       status='<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:#DCFCE7;color:#15803D;vertical-align:middle;margin-left:8px">&#10003; Submitted</span>';
       const isMultiEntry = f.key==='form3' || f.key==='form4';
@@ -1949,6 +1997,9 @@ function showSchoolMenu(){
    SCHOOL DASHBOARD SUMMARY SCREEN
    ============================================================ */
 let _sdsLastCode='', _sdsLastPartner='', _sdsLastTrack='';
+// Opening the screen can start two loads at once (showScreen, then sdsOnView
+// with the chosen school); only the latest one may render.
+let _sdsLoadSeq=0;
 
 async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrack){
   const s=getSession(); if(!s) return;
@@ -1962,6 +2013,7 @@ async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrac
     _sdsLastTrack=overrideTrack||'';
   }
   const code=_sdsLastCode||(s.schoolCode||'');
+  const seq=++_sdsLoadSeq;
   const _sch=SCHOOLS.find(x=>x.code===code);
   const schoolName=_sch?_sch.name:(code||'Your School');
   const partner=_sdsLastCode?_sdsLastPartner:(_sch?_sch.partner:'');
@@ -1986,12 +2038,11 @@ async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrac
   // Loading placeholders
   $('sdsSectionTable').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p>';
   $('sdsProgressBody').innerHTML='<p style="text-align:center;color:var(--muted);padding:20px 0">Loading…</p>';
+  if(!code) return;
 
   try{
-    const fetches=[fetchForm3Subs(url,code,s.token), fetchGradeConfig(url,s.token)];
-    if(!canUseCache) fetches.push(fetchSchoolData(url,code,s.token));
-    const results=await Promise.all(fetches);
-    const [f3Result, gcResult, sdResult]=results;
+    const [f3Result, gcResult, sdResult]=await fetchSchoolDashSummary(url,code,s.token,!canUseCache);
+    if(seq!==_sdsLoadSeq) return;
 
     // Populate grades from fetched school data when not using sdData cache
     if(!canUseCache&&sdResult&&sdResult.status==='ok'&&sdResult.data&&sdResult.data.form1_school_orientation){
@@ -2017,9 +2068,11 @@ async function loadSchoolDashSummary(overrideCode, overridePartner, overrideTrac
     const soResults=await Promise.all(
       grades.map(g=>cfgMap[g]?fetchSessionObs(url,code,cfgMap[g],s.token):Promise.resolve(null))
     );
+    if(seq!==_sdsLoadSeq) return;
     renderSdsProgress(grades, cfgMap, soResults);
 
   }catch(e){
+    if(seq!==_sdsLoadSeq) return;
     $('sdsSectionTable').innerHTML='<p style="color:var(--err);padding:20px">Could not load. Try again.</p>';
     $('sdsProgressBody').innerHTML='';
   }
@@ -3964,6 +4017,23 @@ async function buddyPDFDrawTable(doc, engQs, telQs, teluguAvailable, tableY, eng
   return y;
 }
 
+// jsPDF is ~350 KB, so it is fetched the first time a PDF is generated
+// instead of blocking the initial page load. Resolves false on failure.
+let _jsPdfPromise=null;
+function loadJsPdf(){
+  if(window.jspdf) return Promise.resolve(true);
+  if(!_jsPdfPromise){
+    _jsPdfPromise=new Promise(resolve=>{
+      const el=document.createElement('script');
+      el.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      el.onload=()=>resolve(true);
+      el.onerror=()=>{ _jsPdfPromise=null; el.remove(); resolve(false); };
+      document.head.appendChild(el);
+    }).then(ok=>{ if(!ok) toast('Could not load the PDF library. Check your connection and try again.'); return ok; });
+  }
+  return _jsPdfPromise;
+}
+
 async function downloadBuddyPDF(){
   if(!buddyState.feedback){ toast('No evaluation results to download.'); return; }
   const engQs=extractBuddyQuestions(buddyState.feedback);
@@ -3971,6 +4041,7 @@ async function downloadBuddyPDF(){
   const telQs=extractTeluguQuestions(buddyState.feedback);
   const engIntro=extractBuddyIntro(buddyState.feedback);
   const telIntro=extractTeluguIntro(buddyState.feedback);
+  if(!(await loadJsPdf())) return;
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
@@ -4191,6 +4262,7 @@ function evaluateTeamFromOverview(idx){
 
 async function downloadAllTeamsPDF(){
   if(!buddyOverviewData.length){ toast('No team data to export.'); return; }
+  if(!(await loadJsPdf())) return;
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const ml=18, mr=18, cw=210-ml-mr;
@@ -4881,6 +4953,7 @@ async function sbDownloadTeamPDF(teamCode){
   const engIntro=extractBuddyIntro(team.feedbackText);
   const telIntro=extractTeluguIntro(team.feedbackText);
 
+  if(!(await loadJsPdf())) return;
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
@@ -4917,6 +4990,7 @@ async function sbDownloadAllPDF(){
   const teams=schoolBuddyState.teams.filter(t=>t.feedbackText&&extractBuddyQuestions(t.feedbackText).length);
   if(!teams.length){ toast('No feedback generated yet.'); return; }
 
+  if(!(await loadJsPdf())) return;
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const teluguLoaded=await loadTeluguFont();
